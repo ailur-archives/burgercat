@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>burgercat</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head>
+
+<body>
+    <div class="navbar">
+        <h1>burgercat</h1>
+        <a href="/">home</a>
+        <a href="/post">post</a>
+        {% if userdata %}
+        <a href="/settings/logout" class="right r">log out</a>
+        <a href="/settings" class="right selected">{{ userdata.username }}</a>
+        {% else %}
+        <a href="/signup" class="right r">sign up</a>
+        <a href="/login" class="right">log in</a>
+        {% endif %}
+    </div>
+
+    <br><br><br><br><br><br>
+    <div class="post">
+        {% if userdata.administrator == 1 %}
+            Administrator<br><br>
+        {% endif %}
+        Logged in as {{ userdata.username }}<br>
+        Your user ID is {{ userdata.id }}
+        <br><br>
+        <a href="/settings/logout">Log out</a>
+    </div>
+
+</body>
+
+</html>

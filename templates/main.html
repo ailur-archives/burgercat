@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>burgercat</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head>
+
+<body>
+    <div class="navbar">
+        <h1>burgercat</h1>
+        <a class="selected" href="/">home</a>
+        <a href="/post">post</a>
+        {% if userdata %}
+        <a href="/settings/logout" class="right r">log out</a>
+        <a href="/settings" class="right">{{ userdata.username }}</a>
+        {% else %}
+        <a href="/signup" class="right r">sign up</a>
+        <a href="/login" class="right">log in</a>
+        {% endif %}
+    </div>
+
+    <br><br><br><br><br><br>
+
+    {% for post in posts %}
+        <div class="post">
+            <p class="username">{{ getUser(post["creator"])["username"] }}</p>
+            <p class="date">{{ post["created"] }}</p>
+            {% if userdata.administrator == 1 %}
+            <a class="date" href='/remove/{{post["id"]}}'>Remove post</a>
+            <br><br>
+            {% endif %}
+            <img loading="lazy" src='{{ post["imageurl"] }}'>
+            <p class="text">{{ post["textstr"] }}</p>
+        </div>
+    {% endfor %}
+
+</body>
+
+</html>

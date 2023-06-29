@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>burgercat</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head>
+
+<body>
+    <div class="navbar">
+        <h1>burgercat</h1>
+        <a href="/">home</a>
+        <a class="selected" href="/post">post</a>
+        {% if userdata %}
+        <a href="/settings/logout" class="right r">log out</a>
+        <a href="/settings" class="right">{{ userdata.username }}</a>
+        {% else %}
+        <a href="/signup" class="right r">sign up</a>
+        <a href="/login" class="right">log in</a>
+        {% endif %}
+    </div>
+
+    <br><br><br><br><br><br>
+    <div class="post">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="flash">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <form method="post" enctype="multipart/form-data">
+            <h2>Post</h2>
+            <p>Image</p>
+            <input type="file" name="file">
+            <br>
+            <p>Text</p>
+            <input name="title" type="text" placeholder="Text">
+            <br><br>
+            <input class="submit" type="submit" value="Post">
+        </form>
+    </div>
+    <div class="post">
+        <form method="post" enctype="multipart/form-data">
+            <h2>Rules</h2>
+            <ul>
+                <li>Please do not spam</li>
+                <li>Treat everyone with respect, respect each others opinions</li>
+                <li>Posting NSFW content is strictly prohibited, doing so will get you an instant ban</li>
+                <li>Discussions regarding politics and related controversial topics are disallowed</li>
+                <li>Advertising is not allowed</li>
+                <li>Do not post links</li>
+                <li>Do not create alt-accounts to evade bans</li>
+                <br>
+                In general, just be a good person.
+            </ul>
+        </form>
+    </div>
+
+</body>
+
+</html>
