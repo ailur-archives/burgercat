@@ -281,12 +281,12 @@ def logout():
 
 @app.errorhandler(413)
 def page_not_found(e):
-    return errorMessage("the server decided to commit die")
+    return "the server decided to commit die"
 
 
 @app.errorhandler(413)
 def page_not_found(e):
-    return errorMessage("Images can't be larger than 4MB")
+    return "Images can't be larger than 4MB"
 
 
 if __name__ == "__main__":
