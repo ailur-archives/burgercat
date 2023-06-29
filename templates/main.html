@@ -26,16 +26,18 @@
     <br><br><br><br><br><br>
 
     {% for post in posts %}
-        <div class="post">
-            <p class="username">{{ getUser(post["creator"])["username"] }}</p>
-            <p class="date">{{ post["created"] }}</p>
-            {% if userdata.administrator == 1 %}
-            <a class="date" href='/remove/{{post["id"]}}'>Remove post</a>
-            <br><br>
-            {% endif %}
-            <img loading="lazy" src='{{ post["imageurl"] }}'>
-            <p class="text">{{ post["textstr"] }}</p>
-        </div>
+    <div class="post">
+        <p class="username">{{ getUser(post["creator"])["username"] }}</p>
+        <p class="date">{{ post["created"] }}</p>
+        {% if userdata %}
+        {% if userdata.administrator == 1 %}
+        <a class="date" href='/remove/{{post["id"]}}'>Remove post</a>
+        <br><br>
+        {% endif %}
+        {% endif %}
+        <img loading="lazy" src='{{ post["imageurl"] }}'>
+        <p class="text">{{ post["textstr"] }}</p>
+    </div>
     {% endfor %}
 
 </body>
