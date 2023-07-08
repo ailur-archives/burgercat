@@ -2,8 +2,10 @@
 import os
 import configparser
 import sqlite3
+import time
 import json
 import secrets
+from itertools import groupby
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
@@ -27,7 +29,7 @@ if SECRET_KEY == "placeholder":
     print("[WARNING] Secret key is not set")
 
 if not os.path.exists(UPLOAD_FOLDER):
-    print("[WARNING] Upload folder doesn't exist, creating one")
+    print("[WARNING] Upload folder doesn't exist, creating")
     os.mkdir(UPLOAD_FOLDER)
 
 if not os.path.exists("database.db"):
@@ -54,6 +56,18 @@ def get_user(id):
         return "error"
     return post
 
+
+def get_comments(id):
+    conn = get_db_connection()
+    post = conn.execute("SELECT * FROM comments WHERE post_id = ?",
+                        (id,)).fetchall()
+    conn.close()
+    if post is None:
+        return "error"
+    return post
+
+
+app.jinja_env.globals.update(getComments=get_comments)
 
 def get_post(id):
     conn = get_db_connection()
@@ -100,8 +114,7 @@ def allowed_file(filename):
 def main():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     conn = get_db_connection()
-    posts = conn.execute(
-        "SELECT * FROM posts ORDER BY created DESC;").fetchall()
+    posts = conn.execute("SELECT * FROM posts ORDER BY created DESC;").fetchall()
     conn.close()
 
     if usersession:
@@ -111,7 +124,6 @@ def main():
     else:
         return render_template("main.html", posts=posts)
 
-
 @app.route("/post", methods=("GET", "POST"))
 def post():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
@@ -120,20 +132,20 @@ def post():
             title = request.form["title"]
             if title == "":
                 flash("Text required :3")
-                return redirect(request.url)
+                return redirect(url_for("post"))
 
             if "file" not in request.files:
                 flash("No file selected :3")
-                return redirect(request.url)
+                return redirect(url_for("post"))
 
             file = request.files["file"]
             if file.filename == "":
                 flash("No file selected :3")
-                return redirect(request.url)
+                return redirect(url_for("post"))
 
             if not allowed_file(file.filename):
                 flash("File is not an image!")
-                return redirect(request.url)
+                return redirect(url_for("post"))
 
             filename = secure_filename(file.filename)
             finalfilename = secrets.token_hex(64) + filename
@@ -147,16 +159,14 @@ def post():
             if not user["banned"] == "0":
                 flash("Your account has been banned. Reason: " +
                       user["banned"])
-                return redirect(request.url)
-
-            print(userCookie)
+                return redirect(url_for("post"))
 
             conn = get_db_connection()
-            conn.execute("INSERT INTO posts (textstr, imageurl, creator) VALUES (?, ?, ?)",
-                         (title, imgurl, userCookie["id"]))
+            conn.execute("INSERT INTO posts (textstr, imageurl, creator, created) VALUES (?, ?, ?, ?)",
+                         (title, imgurl, userCookie["id"], str(time.time())))
             conn.commit()
             conn.close()
-            return redirect("/")
+            return redirect(url_for("main"))
 
         else:
             userCookie = get_session(usersession)
@@ -164,7 +174,40 @@ def post():
             return render_template("post.html", userdata=user)
     else:
         flash("A burgercat account is required to post :3")
-        return redirect("/login")
+        return redirect(url_for("login"))
+
+
+@app.route("/comment", methods=("GET", "POST"))
+def comment():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if usersession:
+        if request.method == "POST":
+
+            data = request.get_json()
+            uid = data["id"]
+            title = data["title"]
+            
+            userCookie = get_session(usersession)
+            user = get_user(userCookie["id"])
+
+            if not user["banned"] == "0":
+                flash("Your account has been banned. Reason: " +
+                      user["banned"])
+                return redirect(url_for("comment"))
+
+            conn = get_db_connection()
+            conn.execute("INSERT INTO comments (textstr, post_id, creator, created) VALUES (?, ?, ?, ?)",
+                         (title, uid, userCookie["id"], str(time.time())))
+            conn.commit()
+            conn.close()
+
+            return "success"
+
+        else:
+            return """<img src="https://http.cat/images/400.jpg">""", 400
+    else:
+        flash("A burgercat account is required to post :3")
+        return redirect(url_for("login"))
 
 
 @app.route("/cdn/<filename>", methods=("GET", "POST"))
@@ -179,29 +222,29 @@ def cdn(filename):
 def signup():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
-        return redirect("/")
+        return redirect(url_for("main"))
     if request.method == "POST":
         if not check_username_taken(request.form["username"]) == "error":
             flash("Username already taken :3")
-            return redirect(request.url)
+            return redirect(url_for("signup"))
 
         if not request.form["username"].isalnum():
             flash("Username must be alphanumeric :3")
-            return redirect(request.url)
+            return redirect(url_for("signup"))
 
         if not len(request.form["password"]) > int(PASSWORD_REQUIREMENT):
             flash("Password must contain at least " + PASSWORD_REQUIREMENT + " characters")
-            return redirect(request.url)
+            return redirect(url_for("signup"))
 
         hashedpassword = generate_password_hash(request.form["password"])
 
         conn = get_db_connection()
-        conn.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-                     (request.form["username"], hashedpassword))
+        conn.execute("INSERT INTO users (username, password, created) VALUES (?, ?, ?)",
+                     (request.form["username"], hashedpassword, str(time.time())))
         conn.commit()
         conn.close()
 
-        return redirect("/login")
+        return redirect(url_for("login"))
     else:
         return render_template("signup.html")
 
@@ -210,18 +253,18 @@ def signup():
 def login():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
-        return redirect("/")
+        redirect(url_for("main"))
     if request.method == "POST":
         userID = check_username_taken(request.form["username"])
         user = get_user(userID)
 
         if user == "error":
             flash("Wrong username or password :3")
-            return redirect(request.url)
+            return redirect(url_for("login"))
 
         if not check_password_hash(user["password"], (request.form["password"])):
             flash("Wrong username or password :3")
-            return redirect(request.url)
+            return redirect(url_for("login"))
 
         randomCharacters = secrets.token_hex(512)
 
@@ -267,7 +310,7 @@ def remove(postid):
         else:
             return "nice try"
     else:
-        return redirect("/login")
+        return redirect(url_for("login"))
 
 @app.route("/listusers", methods=("GET", "POST"))
 def listusers():
@@ -286,32 +329,39 @@ def listusers():
 
             return thing
         else:
-            return "nice try"
+            return """<img src="https://http.cat/images/403.jpg">"""
     else:
-        return redirect("/login")
+        return redirect(url_for("login"))
 
 
 @app.route("/settings/logout", methods=("GET", "POST"))
 def logout():
-    resp = redirect("/")
+    resp = redirect(url_for("main"))
     session = request.cookies.get("session_DO_NOT_SHARE")
     resp.delete_cookie("session_DO_NOT_SHARE")
 
     return resp
 
+@app.errorhandler(500)
+def page_not_found(e):
+    return """<img src="https://http.cat/images/500.jpg">""", 500
+
+@app.errorhandler(400)
+def page_not_found(e):
+    return """<img src="https://http.cat/images/400.jpg">""", 400
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return """<img src="https://http.cat/images/404.jpg">""", 404
 
 @app.errorhandler(413)
 def page_not_found(e):
-    return "the server decided to commit die"
-
-
-@app.errorhandler(413)
-def page_not_found(e):
-    return "Images can't be larger than 4MB"
+    return "Images can't be larger than 4MB", 413
 
 
 if __name__ == "__main__":
     from waitress import serve
     print("[INFO] Server started")
     serve(app, host=HOST, port=PORT)
+    #app.run(host=HOST, port=PORT, debug=True)
     print("[INFO] Server stopped")

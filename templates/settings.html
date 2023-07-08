@@ -23,13 +23,12 @@
         {% endif %}
     </div>
 
-    <br><br><br><br><br><br>
+    <br><br><br><br><br><br><br>
     <div class="post">
         {% if userdata.administrator == 1 %}
             Administrator<br><br>
         {% endif %}
-        Logged in as {{ userdata.username }}<br>
-        Your user ID is {{ userdata.id }}
+        Logged in as {{ userdata.username }}
         <br><br>
         <a href="/settings/logout">Log out</a>
     </div>

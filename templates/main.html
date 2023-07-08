@@ -23,12 +23,16 @@
         {% endif %}
     </div>
 
-    <br><br><br><br><br><br>
+    <script>
+        let timeStampElement
+        let unixTime
+    </script>
 
+    <div class="postDiv">
     {% for post in posts %}
-    <div class="post">
+    <div class="post" id="post">
         <p class="username">{{ getUser(post["creator"])["username"] }}</p>
-        <p class="date">{{ post["created"] }}</p>
+        <p class="date" id='timestamp_{{post["id"]}}'> </p>
         {% if userdata %}
         {% if userdata.administrator == 1 %}
         <a class="date" href='/remove/{{post["id"]}}'>Remove post</a>
@@ -37,9 +41,58 @@
         {% endif %}
         <img loading="lazy" src='{{ post["imageurl"] }}'>
         <p class="text">{{ post["textstr"] }}</p>
+        <div class="commentsdiv">
+            {% for comment in getComments(post["id"]) %}
+            <p>{{ getUser(comment["creator"])["username"] }}: {{ comment.textstr }}</p>
+            {% endfor %}
+        </div>
+        <p id="commentId" class="hidden">{{ post.id }}</p>
+        <button id="commentButton" class="comment">comment</button>
+        <div id="commentDiv" class="commentdiv hidden">
+            <input id="commentBox" type="text" placeholder="content">
+            <button id="commentDivSave">save</button>
+            <button id="commentDivCancel">cancel</button>
+        </div>
+        <script>
+            function time2TimeAgo(ts) {
+                var d = new Date();
+                var nowTs = Math.floor(d.getTime() / 1000);
+                var seconds = nowTs - ts;
+
+                var interval = seconds / 31536000;
+
+                if (interval > 1) {
+                    return Math.floor(interval) + " years ago";
+                }
+                interval = seconds / 2592000;
+                if (interval > 1) {
+                    return Math.floor(interval) + " months ago";
+                }
+                interval = seconds / 86400;
+                if (interval > 1) {
+                    return Math.floor(interval) + " days ago";
+                }
+                interval = seconds / 3600;
+                if (interval > 1) {
+                    return Math.floor(interval) + " hours ago";
+                }
+                interval = seconds / 60;
+                if (interval > 1) {
+                    return Math.floor(interval) + " minutes ago";
+                }
+                return Math.floor(seconds) + " seconds";
+            }
+
+            timeStampElement = document.getElementById('timestamp_{{post["id"]}}')
+            unixTime = '{{post["created"]}}'
+
+            timeStampElement.innerHTML = time2TimeAgo(unixTime)
+        </script>
     </div>
     {% endfor %}
+    </div>
 
+    <script src="/static/js/main.js"></script>
 </body>
 
 </html>
