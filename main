@@ -275,11 +275,8 @@ def login():
         conn.commit()
         conn.close()
 
-        expire_date = datetime.datetime.now
-        expire_date = expire_date + datetime.timedelta(days=365)
-
         resp = make_response(redirect("/"))
-        resp.set_cookie("session_DO_NOT_SHARE", randomCharacters, expires=expire_date)
+        resp.set_cookie("session_DO_NOT_SHARE", randomCharacters, expires=datetime.datetime.now() + datetime.timedelta(days=float(180)))
 
         return resp
     else:
