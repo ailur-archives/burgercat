@@ -5,6 +5,7 @@ import sqlite3
 import time
 import json
 import secrets
+import datetime
 from itertools import groupby
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -274,8 +275,11 @@ def login():
         conn.commit()
         conn.close()
 
+        expire_date = datetime.datetime.now
+        expire_date = expire_date + datetime.timedelta(days=365)
+
         resp = make_response(redirect("/"))
-        resp.set_cookie("session_DO_NOT_SHARE", randomCharacters)
+        resp.set_cookie("session_DO_NOT_SHARE", randomCharacters, expires=expire_date)
 
         return resp
     else:
