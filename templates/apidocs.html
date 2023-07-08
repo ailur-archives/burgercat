@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>burgercat</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head>
+
+<body>
+    <div class="navbar">
+        <h1>burgercat</h1>
+        <a href="/">home</a>
+        <a href="/post">post</a>
+        <a class="selected" href="/apidocs">API</a>
+        {% if userdata %}
+        <a href="/settings/logout" class="right r">log out</a>
+        <a href="/settings" class="right">{{ userdata.username }}</a>
+        {% else %}
+        <a href="/signup" class="right r">sign up</a>
+        <a href="/login" class="right">log in</a>
+        {% endif %}
+    </div>
+
+    <script>
+        let timeStampElement
+        let unixTime
+    </script>
+
+    <div class="postDiv">
+    <div class="post">
+    <h2>burgercat API documentation</h2>
+    for API things that require authentication, you will need to set the <code>session_DO_NOT_SHARE</code> cookie. the key might expire after 180 days.<br><br>
+    
+    GET <code>/api/frontpage</code> - returns frontpage<br><br>
+    POST <code>/api/post</code> - post ctas - authentication required<br>
+    <code>title</code>, being the title of the post and <code>file</code>, being an image file.<br>
+    Supported file extensions: "png", "apng", "jpg", "jpeg", "gif", "svg", "webp"<br><br>
+    POST <code>/api/comment</code> - comment on posts - authentication required<br>
+    <code>title</code>, being the title of the comment and <code>id</code>, being the ID of the post you want to comment on.<br><br>
+    POST <code>/api/login</code> - get authentication key<br>
+    <code>username</code>, being the username and <code>password</code>, being the password. Returns authentication key.<br><br>
+    GET <code>/api/userinfo</code> - authentication required - Returns user info, username, ID, and account creation date.
+    </div>
+    </div>
+</body>
+
+</html>

@@ -125,6 +125,159 @@ def main():
     else:
         return render_template("main.html", posts=posts)
 
+@app.route("/api/frontpage", methods=("GET", "POST"))
+def apifrontpage():
+    conn = get_db_connection()
+    posts = conn.execute("SELECT * FROM posts ORDER BY created DESC;").fetchall()
+    conn.close()
+
+    result = []
+
+    for post in posts:
+        comments = []
+
+        for comment in get_comments(post["id"]):
+            commentthing = {
+                "title": comment["textstr"],
+                "created": comment["created"],
+                "creator": {
+                    "id": comment["creator"],
+                    "username": get_user(comment["creator"])["username"]
+                }
+            }
+            comments.append(commentthing)
+
+
+        mainthing = {
+            "id": post["id"],
+            "created": post["created"],
+            "title": post["textstr"],
+            "imgurl": post["imageurl"],
+            "creator": {
+                "id": post["creator"],
+                "username": get_user(post["creator"])["username"]
+            },
+            "comments": comments
+        }
+        
+        result.append(mainthing)
+
+    return result
+
+@app.route("/api/userinfo", methods=("GET", "POST"))
+def apiuserinfo():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if usersession:
+        userCookie = get_session(usersession)
+        user = get_user(userCookie["id"])
+        datatemplate = {
+            "username": user["username"],
+            "id": user["id"],
+            "created": user["created"]
+        }
+        return datatemplate
+    else:
+        return {
+                    "error": "no authentication"
+                }, 403
+
+@app.route("/api/login", methods=("GET", "POST"))
+def apilogin():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if request.method == "POST":
+        data = request.get_json()
+        username = data["username"]
+        password = data["password"]
+
+        userID = check_username_taken(username)
+        user = get_user(userID)
+
+        if user == "error":
+            return {
+                    "error": "wrong username or password"
+                }, 401
+
+        if not check_password_hash(user["password"], (password)):
+            return {
+                    "error": "wrong username or password"
+                }, 401
+
+        randomCharacters = secrets.token_hex(512)
+
+        conn = get_db_connection()
+        conn.execute("INSERT INTO sessions (session, id) VALUES (?, ?)",
+                     (randomCharacters, userID))
+        conn.commit()
+        conn.close()
+
+        return {
+                    "key": randomCharacters
+                }, 100
+
+@app.route("/api/post", methods=("GET", "POST"))
+def apipost():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if usersession:
+        if request.method == "POST":
+
+            data = request.get_json()
+            title = data["id"]
+
+            if title == "":
+                return {
+                    "error": "no title"
+                }, 403
+
+            if "file" not in request.files:
+                return {
+                    "error": "no file"
+                }, 403
+
+            file = request.files["file"]
+            if file.filename == "":
+                return {
+                    "error": "no file"
+                }, 403
+
+            if not allowed_file(file.filename):
+                return {
+                    "error": "invalid file format"
+                }, 403
+            
+            filename = secure_filename(file.filename)
+            finalfilename = secrets.token_hex(64) + filename
+
+            file.save(os.path.join(UPLOAD_FOLDER, finalfilename))
+            imgurl = "/cdn/" + finalfilename
+
+            userCookie = get_session(usersession)
+            user = get_user(userCookie["id"])
+
+            if not user["banned"] == "0":
+                return {
+                    "error": "banned",
+                    "reason": user["banned"]
+                }, 403
+
+            conn = get_db_connection()
+            conn.execute("INSERT INTO posts (textstr, imageurl, creator, created) VALUES (?, ?, ?, ?)",
+                         (title, imgurl, userCookie["id"], str(time.time())))
+            conn.commit()
+            conn.close()
+
+            return "success", 100
+
+@app.route("/apidocs", methods=("GET", "POST"))
+def apidocs():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+
+    if usersession:
+        userCookie = get_session(usersession)
+        user = get_user(userCookie["id"])
+        return render_template("apidocs.html", userdata=user)
+    else:
+        return render_template("apidocs.html")
+
 @app.route("/post", methods=("GET", "POST"))
 def post():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
@@ -178,7 +331,7 @@ def post():
         return redirect(url_for("login"))
 
 
-@app.route("/comment", methods=("GET", "POST"))
+@app.route("/api/comment", methods=("GET", "POST"))
 def comment():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
@@ -192,9 +345,10 @@ def comment():
             user = get_user(userCookie["id"])
 
             if not user["banned"] == "0":
-                flash("Your account has been banned. Reason: " +
-                      user["banned"])
-                return redirect(url_for("comment"))
+                return {
+                    "error": "banned",
+                    "reason": user["banned"]
+                }, 403
 
             conn = get_db_connection()
             conn.execute("INSERT INTO comments (textstr, post_id, creator, created) VALUES (?, ?, ?, ?)",
@@ -202,13 +356,16 @@ def comment():
             conn.commit()
             conn.close()
 
-            return "success"
+            return "success", 100
 
         else:
-            return """<img src="https://http.cat/images/400.jpg">""", 400
+            return {
+                    "error": "https://http.cat/images/400.jpg"
+                }, 400
     else:
-        flash("A burgercat account is required to post :3")
-        return redirect(url_for("login"))
+        return {
+                    "error": "https://http.cat/images/401.jpg"
+                }, 401
 
 
 @app.route("/cdn/<filename>", methods=("GET", "POST"))
@@ -357,7 +514,7 @@ def page_not_found(e):
 
 @app.errorhandler(413)
 def page_not_found(e):
-    return "Images can't be larger than 4MB", 413
+    return "Images can't be larger than " + str(UPLOAD_LIMIT) + "MB", 413
 
 
 if __name__ == "__main__":

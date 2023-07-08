@@ -32,7 +32,7 @@ for (let i = 0; i < posts.length; i++) {
             commentBurgerDiv.append(para)
         }
 
-        fetch("/comment", {
+        fetch("/api/comment", {
             method: "POST",
             body: JSON.stringify({
                 id: id,
