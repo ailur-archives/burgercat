@@ -88,6 +88,7 @@ body {
 .post img {
     min-height: 200px;
     max-height: 300px;
+    border-radius: 0px;
 }
 
 .post button {
