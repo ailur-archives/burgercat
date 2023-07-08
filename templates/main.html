@@ -47,7 +47,9 @@
             {% endfor %}
         </div>
         <p id="commentId" class="hidden">{{ post.id }}</p>
+        {% if userdata %}
         <button id="commentButton" class="comment">comment</button>
+        {% endif %}
         <div id="commentDiv" class="commentdiv hidden">
             <input id="commentBox" type="text" placeholder="content">
             <button id="commentDivSave">save</button>
