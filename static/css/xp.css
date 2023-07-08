@@ -1,7 +1,6 @@
 body {
     margin: 0;
     background-color: #ebe8d8;
-    font-family: "Inter", sans-serif;
 }
 
 .navbar {
@@ -42,7 +41,6 @@ body {
     border-color: grey;
     width: calc(100% - 15px);
     font-size: 16px;
-    border-radius: 8px;
 }
 .accountform .flash {
     padding: 7px;
@@ -51,7 +49,6 @@ body {
     border-color: #f1b739;
     width: calc(100% - 15px);
     font-size: 16px;
-    border-radius: 8px;
 }
 .accountform button {
     padding: 7px;
@@ -62,7 +59,6 @@ body {
     background-color: white;
     font-size: 16px;
     width: 100%;
-    border-radius: 8px;
 }
 
 .navbar a {
