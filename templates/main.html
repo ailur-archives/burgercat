@@ -39,21 +39,33 @@
         <br><br>
         {% endif %}
         {% endif %}
+        {% if userdata %}
+        <p class="hidden" id="usernameElement">{{ userdata.username }}</p>
+        {% endif %}
         <img loading="lazy" src='{{ post["imageurl"] }}'>
         <p class="text">{{ post["textstr"] }}</p>
-        <div class="commentsdiv">
+        {% if getComments(post["id"]) | length > 0 %}
+        <div id="commentBurgerDiv" class="commentsdiv">
             {% for comment in getComments(post["id"]) %}
             <p>{{ getUser(comment["creator"])["username"] }}: {{ comment.textstr }}</p>
             {% endfor %}
         </div>
-        <p id="commentId" class="hidden">{{ post.id }}</p>
-        {% if userdata %}
-        <button id="commentButton" class="comment">comment</button>
+        {% else %}
+        <div id="commentBurgerDiv" class="hidden"></div>
         {% endif %}
+        <p id="commentId" class="hidden">{{ post.id }}</p>
+        <button id="commentButton" class="comment">comment</button>
         <div id="commentDiv" class="commentdiv hidden">
+            {% if userdata %}
             <input id="commentBox" type="text" placeholder="content">
             <button id="commentDivSave">save</button>
             <button id="commentDivCancel">cancel</button>
+            {% else %}
+            <a href="/login">Log in</a>, or <a href="/signup">create an account</a> to <b>comment</b>, post, and more!
+            <input id="commentBox" class="hidden" type="text" placeholder="content">
+            <button id="commentDivSave" class="hidden">save</button>
+            <button id="commentDivCancel" class="hidden">cancel</button>
+            {% endif %}
         </div>
         <script>
             function time2TimeAgo(ts) {

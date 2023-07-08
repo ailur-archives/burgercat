@@ -3,6 +3,8 @@ for (let i = 0; i < posts.length; i++) {
     let post = posts[i]
     let commentButton = post.children["commentButton"]
     let commentId = post.children["commentId"]
+    let commentBurgerDiv = post.children["commentBurgerDiv"]
+    let usernameElement = post.children["usernameElement"]
     let commentDiv = post.children["commentDiv"]
     let commentBox = commentDiv.children["commentBox"]
     let commentSave = commentDiv.children["commentDivSave"]
@@ -20,6 +22,16 @@ for (let i = 0; i < posts.length; i++) {
         title = String(commentBox.value)
         id = String(commentId.innerHTML)
 
+
+        function addPost() {
+            console.log("fart")
+
+            let para = document.createElement("p");
+            const node = document.createTextNode(usernameElement.innerHTML + ": " + title);
+            para.appendChild(node)
+            commentBurgerDiv.append(para)
+        }
+
         fetch("/comment", {
             method: "POST",
             body: JSON.stringify({
@@ -30,8 +42,7 @@ for (let i = 0; i < posts.length; i++) {
                 "Content-Type": "application/json"
             }
         })
-            .then((response) => response.json())
-            .then((json) => console.log(json));
+            .then((response) => addPost())
 
         commentDiv.classList.add("hidden")
     });
