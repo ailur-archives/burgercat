@@ -252,6 +252,8 @@ def apiuserinfo():
                     "error": "no authentication"
                 }, 403
 
+
+@limiter.limit("10/minute", override_defaults=False)
 @app.route("/api/login", methods=("GET", "POST"))
 def apilogin():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
