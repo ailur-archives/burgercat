@@ -450,6 +450,23 @@ def comment():
                     "error": "https://http.cat/images/401.jpg"
                 }, 401
 
+@app.route("/api/post/<post_id>/comments", methods=("GET", "POST"))
+def apicomments(post_id):
+    postthing = get_comments(int(post_id))
+
+    if not postthing == "error":
+        comments = []
+        for comment in postthing:
+            commentthing = {
+                "title": comment["textstr"],
+                "created": comment["created"],
+                "creator": {
+                    "id": comment["creator"],
+                    "username": get_user(comment["creator"])["username"]
+                }
+            }
+            comments.append(commentthing)
+        return comments
 
 @app.route("/cdn/<filename>", methods=("GET", "POST"))
 @limiter.limit("8/second", override_defaults=False)
