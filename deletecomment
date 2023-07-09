@@ -1,0 +1,16 @@
+#!/usr/bin/python3
+import sqlite3
+import os
+
+commentid = input("Insert ID: ")
+
+def get_db_connection():
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+conn = get_db_connection()
+conn.execute("DELETE FROM comments WHERE id = ?", (commentid))
+conn.commit()
+conn.close()
+print("Success!")
