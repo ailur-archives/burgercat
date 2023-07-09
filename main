@@ -382,7 +382,7 @@ def signup():
     if usersession:
         return redirect(url_for("main"))
     if request.method == "POST":
-        if not check_username_taken(request.form["username"]) == "error":
+        if not check_username_taken(str(request.form["username"]).lower()) == "error":
             flash("Username already taken :3")
             return redirect(url_for("signup"))
 

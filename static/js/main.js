@@ -22,15 +22,13 @@ for (let i = 0; i < posts.length; i++) {
         title = String(commentBox.value)
         id = String(commentId.innerHTML)
 
+        commentDiv.classList.add("hidden")
+        commentBurgerDiv.classList.remove("hidden")
 
-        function addPost() {
-            console.log("fart")
-
-            let para = document.createElement("p");
-            const node = document.createTextNode(usernameElement.innerHTML + ": " + title);
-            para.appendChild(node)
-            commentBurgerDiv.append(para)
-        }
+        let para = document.createElement("p");
+        const node = document.createTextNode(usernameElement.innerHTML + ": " + title);
+        para.appendChild(node)
+        commentBurgerDiv.append(para)
 
         fetch("/api/comment", {
             method: "POST",
@@ -42,8 +40,5 @@ for (let i = 0; i < posts.length; i++) {
                 "Content-Type": "application/json"
             }
         })
-            .then((response) => addPost())
-
-        commentDiv.classList.add("hidden")
     });
 }
