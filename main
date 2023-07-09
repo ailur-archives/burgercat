@@ -359,6 +359,10 @@ def post():
                 flash("Text required :3")
                 return redirect(url_for("post"))
 
+            if len(title) > 300:
+                flash("Too long title!")
+                return redirect(url_for("post"))
+
             if "file" not in request.files:
                 flash("No file selected :3")
                 return redirect(url_for("post"))
@@ -372,19 +376,19 @@ def post():
                 flash("File is not an image!")
                 return redirect(url_for("post"))
 
+            if not user["banned"] == "0":
+                flash("Your account has been banned. Reason: " +
+                      user["banned"])
+                return redirect(url_for("post"))
+
             filename = secure_filename(file.filename)
-            finalfilename = secrets.token_hex(64) + filename
+            finalfilename = secrets.token_hex(32) + filename
 
             file.save(os.path.join(UPLOAD_FOLDER, finalfilename))
             imgurl = "/cdn/" + finalfilename
 
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
-
-            if not user["banned"] == "0":
-                flash("Your account has been banned. Reason: " +
-                      user["banned"])
-                return redirect(url_for("post"))
 
             conn = get_db_connection()
             conn.execute("INSERT INTO posts (textstr, imageurl, creator, created) VALUES (?, ?, ?, ?)",
@@ -415,6 +419,11 @@ def comment():
             
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
+
+            if len(title) > 300:
+                return {
+                    "error": "too much text"
+                }, 403
 
             if not user["banned"] == "0":
                 return {
