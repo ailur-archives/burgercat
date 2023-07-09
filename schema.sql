@@ -9,7 +9,8 @@ CREATE TABLE users (
     username TEXT NOT NULL,
     password TEXT NOT NULL,
     banned TEXT NOT NULL DEFAULT 0,
-    administrator INTEGER NOT NULL DEFAULT 0
+    administrator INTEGER NOT NULL DEFAULT 0,
+    htmldescription TEXT NOT NULL
 );
 
 CREATE TABLE posts (

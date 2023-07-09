@@ -31,7 +31,7 @@
     <div class="postDiv">
     {% for post in posts %}
     <div class="post" id="post">
-        <p class="username">{{ getUser(post["creator"])["username"] }}</p>
+        <p><a href='/@{{ getUser(post["creator"])["username"] }}' class="username usernamelink">{{ getUser(post["creator"])["username"] }}</a></p>
         <p class="date" id='timestamp_{{post["id"]}}'> </p>
         {% if userdata %}
         {% if userdata.administrator == 1 %}

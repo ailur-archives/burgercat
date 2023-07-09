@@ -10,6 +10,8 @@ from itertools import groupby
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # read config file
 config = configparser.ConfigParser()
@@ -25,6 +27,14 @@ PASSWORD_REQUIREMENT = config["config"]["PASSWORD_REQUIREMENT"]
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = int(UPLOAD_LIMIT) * 1000 * 1000
+
+limiter = Limiter(
+    get_remote_address,
+    app = app,
+    default_limits = ["3 per second"],
+    storage_uri = "memory://",
+    strategy = "fixed-window"
+)
 
 if SECRET_KEY == "placeholder":
     print("[WARNING] Secret key is not set")
@@ -85,8 +95,8 @@ app.jinja_env.globals.update(getUser=get_user)
 
 def check_username_taken(username):
     conn = get_db_connection()
-    post = conn.execute("SELECT * FROM users WHERE username = ?",
-                        (username,)).fetchone()
+    post = conn.execute("SELECT * FROM users WHERE lower(username) = ?",
+                        (username.lower(),)).fetchone()
     conn.close()
     if post is None:
         return "error"
@@ -124,6 +134,53 @@ def main():
         return render_template("main.html", userdata=user, posts=posts)
     else:
         return render_template("main.html", posts=posts)
+
+@app.route("/@<pageusername>", methods=("GET", "POST"))
+def user(pageusername):
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+
+    checkusername = check_username_taken(pageusername)
+
+    if not checkusername == "error":
+        pageuser = get_user(checkusername)
+        if usersession:
+            userCookie = get_session(usersession)
+            user = get_user(userCookie["id"])
+            return render_template("user.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+        else:
+            return render_template("user.html", createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+    else:
+        return """<img src="https://http.cat/images/404.jpg">""", 404
+
+@app.route("/@<pageusername>/edit", methods=("GET", "POST"))
+def edituser(pageusername):
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+
+    checkusername = check_username_taken(pageusername)
+
+    if not checkusername == "error":
+        pageuser = get_user(checkusername)
+        if usersession:
+            userCookie = get_session(usersession)
+            user = get_user(userCookie["id"])
+            if pageuser["username"] == user["username"]:
+                if request.method == "POST":
+                    code = request.form["code"].replace("Content-Security-Policy", "")
+                    conn = get_db_connection()
+                    conn.execute("UPDATE users SET htmldescription = ? WHERE id = ?",
+                        (code, user["id"]))
+                    conn.commit()
+                    conn.close()
+                    return redirect("/@" + user["username"])
+                else:
+                    return render_template("edituser.html", userdata=user, pageuser=pageuser)
+            else:
+                return """<img src="https://http.cat/images/403.jpg">""", 403
+        else:
+            return """<img src="https://http.cat/images/403.jpg">""", 403
+    else:
+        return """<img src="https://http.cat/images/404.jpg">""", 404
+
 
 @app.route("/api/frontpage", methods=("GET", "POST"))
 def apifrontpage():
@@ -332,6 +389,7 @@ def post():
 
 
 @app.route("/api/comment", methods=("GET", "POST"))
+@limiter.limit("1/second", override_defaults=False)
 def comment():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
@@ -377,12 +435,13 @@ def cdn(filename):
 
 
 @app.route("/signup", methods=("GET", "POST"))
+@limiter.limit("5/minute", override_defaults=False)
 def signup():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         return redirect(url_for("main"))
     if request.method == "POST":
-        if not check_username_taken(str(request.form["username"]).lower()) == "error":
+        if not check_username_taken(request.form["username"]) == "error":
             flash("Username already taken :3")
             return redirect(url_for("signup"))
 
@@ -397,8 +456,8 @@ def signup():
         hashedpassword = generate_password_hash(request.form["password"])
 
         conn = get_db_connection()
-        conn.execute("INSERT INTO users (username, password, created) VALUES (?, ?, ?)",
-                     (request.form["username"], hashedpassword, str(time.time())))
+        conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
+                     (request.form["username"], hashedpassword, str(time.time()), ""))
         conn.commit()
         conn.close()
 
@@ -408,6 +467,7 @@ def signup():
 
 
 @app.route("/login", methods=("GET", "POST"))
+@limiter.limit("10/minute", override_defaults=False)
 def login():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
@@ -507,6 +567,10 @@ def page_not_found(e):
 @app.errorhandler(400)
 def page_not_found(e):
     return """<img src="https://http.cat/images/400.jpg">""", 400
+
+@app.errorhandler(429)
+def page_not_found(e):
+    return """<img src="https://http.cat/images/429.jpg">""", 429
 
 @app.errorhandler(404)
 def page_not_found(e):
