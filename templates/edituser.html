@@ -27,6 +27,7 @@
         {% if userdata %}
         {% if pageuser.id == userdata.id %}
         <h2>edit mode</h2>
+        <p>remote content from media.tenor.com and cdn.discordapp.com is allowed</p>
         <form class="editThing" method="post" enctype="multipart/form-data">
             <textarea class="htmlBox" name="code" type="text" placeholder="<p>Hello World!</p>">{{ userdata.htmldescription }}</textarea>
             <br><br>

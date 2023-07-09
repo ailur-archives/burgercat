@@ -7,8 +7,10 @@ import json
 import secrets
 import datetime
 from itertools import groupby
+from waitress import serve
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -27,6 +29,8 @@ PASSWORD_REQUIREMENT = config["config"]["PASSWORD_REQUIREMENT"]
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = int(UPLOAD_LIMIT) * 1000 * 1000
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 limiter = Limiter(
     get_remote_address,
@@ -115,7 +119,6 @@ def get_session(id):
 
 ALLOWED_EXTENSIONS = {"png", "apng", "jpg", "jpeg", "gif", "svg", "webp"}
 
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -135,6 +138,7 @@ def main():
     else:
         return render_template("main.html", posts=posts)
 
+
 @app.route("/@<pageusername>", methods=("GET", "POST"))
 def user(pageusername):
     usersession = request.cookies.get("session_DO_NOT_SHARE")
@@ -149,6 +153,16 @@ def user(pageusername):
             return render_template("user.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
         else:
             return render_template("user.html", createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+    else:
+        return """<img src="https://http.cat/images/404.jpg">""", 404
+
+@app.route("/api/page/<userid>", methods=("GET", "POST"))
+def apipageuser(userid):
+    pageuser = get_user(userid)
+    addhtml = """<head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com media.tenor.com; style-src: 'self'" /></head>"""
+
+    if not pageuser == "error":
+        return addhtml + pageuser["htmldescription"]
     else:
         return """<img src="https://http.cat/images/404.jpg">""", 404
 
@@ -582,7 +596,6 @@ def page_not_found(e):
 
 
 if __name__ == "__main__":
-    from waitress import serve
     print("[INFO] Server started")
     serve(app, host=HOST, port=PORT)
     #app.run(host=HOST, port=PORT, debug=True)

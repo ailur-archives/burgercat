@@ -7,9 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' fonts.gstatic.com fonts.googleapis.com" />
 </head>
-
 <body>
     <div class="navbar">
         <h1>burgercat</h1>
@@ -39,7 +37,7 @@
         {% endif %}
         {% endif %}
     </div>
-        <iframe class="profileIFrame" sandbox="" srcdoc="{{ pageuser.htmldescription }}"></iframe>
+        <iframe src="/api/page/{{ pageuser.id }}" class="profileIFrame" sandbox=""></iframe>
     </div>
     <style>
         body {
