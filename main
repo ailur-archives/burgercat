@@ -159,7 +159,7 @@ def user(pageusername):
 @app.route("/api/page/<userid>", methods=("GET", "POST"))
 def apipageuser(userid):
     pageuser = get_user(userid)
-    addhtml = """<head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com media.tenor.com; style-src: 'self'" /></head>"""
+    addhtml = """<base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; style-src: 'self';" /></head>"""
 
     if not pageuser == "error":
         return addhtml + pageuser["htmldescription"]
@@ -179,7 +179,7 @@ def edituser(pageusername):
             user = get_user(userCookie["id"])
             if pageuser["username"] == user["username"]:
                 if request.method == "POST":
-                    code = request.form["code"].replace("Content-Security-Policy", "")
+                    code = request.form["code"].replace("Content-Security-Policy", "").replace("<iframe>", "")
                     conn = get_db_connection()
                     conn.execute("UPDATE users SET htmldescription = ? WHERE id = ?",
                         (code, user["id"]))
@@ -441,6 +441,7 @@ def comment():
 
 
 @app.route("/cdn/<filename>", methods=("GET", "POST"))
+@limiter.limit("8/second", override_defaults=False)
 def cdn(filename):
     if os.path.exists(os.path.join(UPLOAD_FOLDER, filename)):
         return send_from_directory(UPLOAD_FOLDER, filename)
