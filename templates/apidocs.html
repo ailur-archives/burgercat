@@ -40,6 +40,8 @@
     Supported file extensions: "png", "apng", "jpg", "jpeg", "gif", "svg", "webp"<br><br>
     POST <code>/api/comment</code> - comment on posts - authentication required<br>
     <code>title</code>, being the title of the comment and <code>id</code>, being the ID of the post you want to comment on.<br><br>
+    POST <code>/api/delete</code> - remove posts - authentication required<br>
+    <code>id</code>, being the id of the post. you must be the owner of the post to delete.<br><br>
     POST <code>/api/login</code> - get authentication key<br>
     <code>username</code>, being the username and <code>password</code>, being the password. Returns authentication key.<br><br>
     GET <code>/api/userinfo</code> - authentication required - Returns user info, username, ID, and account creation date.<br><br>
