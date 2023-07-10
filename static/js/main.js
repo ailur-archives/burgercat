@@ -6,6 +6,7 @@ for (let i = 0; i < posts.length; i++) {
     let commentBurgerDiv = post.children["commentBurgerDiv"]
     let usernameElement = post.children["usernameElement"]
     let commentDiv = post.children["commentDiv"]
+    let removeButton = post.children["removeButton"]
     let commentBox = commentDiv.children["commentBox"]
     let commentSave = commentDiv.children["commentDivSave"]
     let commentCancel = commentDiv.children["commentDivCancel"]
@@ -35,6 +36,22 @@ for (let i = 0; i < posts.length; i++) {
             body: JSON.stringify({
                 id: id,
                 title: title,
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+    });
+    removeButton.addEventListener("click", (e) => {
+        console.log("fart")
+
+        post.classList.add("hidden")
+        id = String(commentId.innerHTML)
+
+        fetch("/api/delete", {
+            method: "POST",
+            body: JSON.stringify({
+                id: id
             }),
             headers: {
                 "Content-Type": "application/json"

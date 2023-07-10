@@ -55,6 +55,13 @@
         {% endif %}
         <p id="commentId" class="hidden">{{ post.id }}</p>
         <button id="commentButton" class="comment">comment</button>
+        {% if userdata %}
+        {% if post.creator | int == userdata.id | int or userdata.administrator == 1%}
+        <button id="removeButton" class="comment">remove</button>
+        {% else %}
+        <button id="removeButton" class="comment hidden">remove</button>
+        {% endif %}
+        {% endif %}
         <div id="commentDiv" class="commentdiv hidden">
             {% if userdata %}
             <input id="commentBox" type="text" placeholder="content">

@@ -291,6 +291,10 @@ def apilogin():
         return {
                     "key": randomCharacters
                 }, 100
+    else:
+        return {
+            "error": "https://http.cat/images/400.jpg"
+        }, 400
 
 @app.route("/api/post", methods=("GET", "POST"))
 def apipost():
@@ -560,23 +564,35 @@ def settings():
         return redirect("/")
 
 
-@app.route("/remove/<postid>", methods=("GET", "POST"))
-def remove(postid):
+@app.route("/api/delete", methods=("GET", "POST"))
+def delete():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
-    if usersession:
-        userCookie = get_session(usersession)
-        user = get_user(userCookie["id"])
-        if str(user["administrator"]) == "1":
-            post = get_post(postid)
-            conn = get_db_connection()
-            conn.execute("DELETE FROM posts WHERE id = ?", (postid,))
-            conn.commit()
-            conn.close()
-            return "Deleted post!"
-        else:
-            return "nice try"
+
+    if request.method == "POST":
+        data = request.get_json()
+        postid = int(data["id"])
+
+        post = get_post(postid)
+        if not post == "error":
+            if usersession:
+                userCookie = get_session(usersession)
+                user = get_user(userCookie["id"])
+
+                if (str(user["administrator"]) == "1") or (int(user["id"]) == int(post["creator"])):
+                    post = get_post(postid)
+                    conn = get_db_connection()
+                    conn.execute("DELETE FROM posts WHERE id = ?", (postid,))
+                    conn.commit()
+                    conn.close()
+                    return "success", 100
+                else:
+                    return {
+                        "error": "https://http.cat/images/403.jpg"
+                    }, 403
     else:
-        return redirect(url_for("login"))
+        return {
+            "error": "https://http.cat/images/400.jpg"
+        }, 400
 
 @app.route("/listusers", methods=("GET", "POST"))
 def listusers():
