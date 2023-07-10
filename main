@@ -159,7 +159,11 @@ def user(pageusername):
 @app.route("/api/page/<userid>", methods=("GET", "POST"))
 def apipageuser(userid):
     pageuser = get_user(userid)
-    addhtml = """<base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; style-src: 'self';" /></head>"""
+    addhtml = """
+    <!DOCTYPE html><script>
+    window.location.replace("http://localhost:8080/" """ + pageuser["id"] + """
+    </script>
+    <base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; style-src: 'self';" /></head>"""
 
     if not pageuser == "error":
         return addhtml + pageuser["htmldescription"]
@@ -379,6 +383,9 @@ def post():
                 flash("File is not an image!")
                 return redirect(url_for("post"))
 
+            userCookie = get_session(usersession)
+            user = get_user(userCookie["id"])
+
             if not user["banned"] == "0":
                 flash("Your account has been banned. Reason: " +
                       user["banned"])
@@ -389,9 +396,6 @@ def post():
 
             file.save(os.path.join(UPLOAD_FOLDER, finalfilename))
             imgurl = "/cdn/" + finalfilename
-
-            userCookie = get_session(usersession)
-            user = get_user(userCookie["id"])
 
             conn = get_db_connection()
             conn.execute("INSERT INTO posts (textstr, imageurl, creator, created) VALUES (?, ?, ?, ?)",
