@@ -161,7 +161,7 @@ def apipageuser(userid):
     pageuser = get_user(userid)
     addhtml = """
     <!DOCTYPE html><script>
-    window.location.replace("https://burger.ctaposter.xyz"/)
+    window.location.replace("https://burger.ctaposter.xyz/");
     window.stop()
     </script>
     <base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; style-src: 'self';" /></head>"""
