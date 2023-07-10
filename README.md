@@ -1,7 +1,9 @@
-burger social media
+burgercat: burger social media
 
-self hosting:
-- git clone https://codeberg.org/burger-software/burgercat
-- cd burgercat
-- python init_db
-- python main
+### self hosting:
+this guide assumes you have git and python3 installed
+
+```git clone https://codeberg.org/burger-software/burgercat
+cd burgercat
+python init_db
+python main```
