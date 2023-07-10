@@ -6,6 +6,7 @@ import time
 import json
 import secrets
 import datetime
+import socket
 from itertools import groupby
 from waitress import serve
 from werkzeug.utils import secure_filename
@@ -19,7 +20,6 @@ from flask_limiter.util import get_remote_address
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-HOST = config["config"]["HOST"]
 PORT = config["config"]["PORT"]
 SECRET_KEY = config["config"]["SECRET_KEY"]
 UPLOAD_FOLDER = config["config"]["UPLOAD_FOLDER"]
@@ -644,6 +644,12 @@ def page_not_found(e):
 
 if __name__ == "__main__":
     print("[INFO] Server started")
-    serve(app, host=HOST, port=PORT)
-    #app.run(host=HOST, port=PORT, debug=True)
+
+    with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        sock.bind(('', int(PORT)))
+        serve(app, sockets=[sock])
+
     print("[INFO] Server stopped")

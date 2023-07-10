@@ -9,3 +9,7 @@ cd burgercat
 python init_db
 python main
 ```
+
+### zero downtime restarts:
+- launch new burgercat server
+- close previous server
