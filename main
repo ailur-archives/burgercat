@@ -28,7 +28,6 @@ PASSWORD_REQUIREMENT = config["config"]["PASSWORD_REQUIREMENT"]
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
-app.config["SERVER_NAME"] = "burger.ctaposter.xyz"
 app.config["MAX_CONTENT_LENGTH"] = int(UPLOAD_LIMIT) * 1000 * 1000
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
@@ -157,7 +156,7 @@ def user(pageusername):
     else:
         return """<img src="https://http.cat/images/404.jpg">""", 404
 
-@app.route("/api/page/<userid>", subdomain="pages", methods=("GET", "POST"))
+@app.route("/api/page/<userid>", methods=("GET", "POST"))
 def apipageuser(userid):
     pageuser = get_user(userid)
     addhtml = """<base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; style-src: 'self';" /></head>"""
