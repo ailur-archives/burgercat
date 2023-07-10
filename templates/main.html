@@ -29,6 +29,12 @@
     </script>
 
     <div class="postDiv">
+    {% if userdata %}
+    {% if userdata.banned == "0" %}
+    {% else %}
+    <p class="warning">Your account has been banned. Reason: "{{ userdata.banned }}". <a href="/settings/logout">Log out</a></p>
+    {% endif %}
+    {% endif %}
     {% for post in posts %}
     <div class="post" id="post">
         <p><a href='/@{{ getUser(post["creator"])["username"] }}' class="username usernamelink">{{ getUser(post["creator"])["username"] }}</a></p>

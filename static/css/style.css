@@ -163,6 +163,13 @@ body {
     text-decoration: none;
 }
 
+.warning {
+    width: 100%;
+    background-color: #f1b739;
+    color: black;
+    padding: 10px;
+}
+
 .hidden {
     display: none;
 }

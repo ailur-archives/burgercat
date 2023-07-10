@@ -337,8 +337,7 @@ def apipost():
 
             if not user["banned"] == "0":
                 return {
-                    "error": "banned",
-                    "reason": user["banned"]
+                    "error": "banned"
                 }, 403
 
             conn = get_db_connection()
@@ -391,8 +390,7 @@ def post():
             user = get_user(userCookie["id"])
 
             if not user["banned"] == "0":
-                flash("Your account has been banned. Reason: " +
-                      user["banned"])
+                flash("Your account has been banned. You may no longer perform this action.")
                 return redirect(url_for("post"))
 
             filename = secure_filename(file.filename)
@@ -438,8 +436,7 @@ def comment():
 
             if not user["banned"] == "0":
                 return {
-                    "error": "banned",
-                    "reason": user["banned"]
+                    "error": "banned"
                 }, 403
 
             conn = get_db_connection()
