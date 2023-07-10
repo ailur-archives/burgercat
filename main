@@ -470,7 +470,7 @@ def apicomments(post_id):
         return comments
 
 @app.route("/cdn/<filename>", methods=("GET", "POST"))
-@limiter.limit("15/second", override_defaults=False)
+@limiter.exempt
 def cdn(filename):
     if os.path.exists(os.path.join(UPLOAD_FOLDER, filename)):
         return send_from_directory(UPLOAD_FOLDER, filename)
