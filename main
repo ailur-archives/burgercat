@@ -236,22 +236,6 @@ def chatsend(roomid):
             return "success", 200
 
 
-@sock.route("/api/chat/listen")
-def chatlisten(ws):
-    global burgerMessageCache
-    global burgerMessageUpdate
-
-    while burgerMessageUpdate == True:
-        ws.send(burgerMessageCache)
-        burgerMessageUpdate = False
-
-@app.route("/erm", methods=("GET", "POST"))
-def erm():
-    print(burgerMessageCache)
-    print(burgerMessageUpdate)
-
-    return "fart"
-
 @app.route("/@<pageusername>", methods=("GET", "POST"))
 def user(pageusername):
     usersession = request.cookies.get("session_DO_NOT_SHARE")

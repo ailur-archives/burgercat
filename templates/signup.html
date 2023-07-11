@@ -25,7 +25,7 @@
         {% endwith %}
         <input name="username" type="text" placeholder="Username" required>
         <br><br>
-        <input name="password" type="password" placeholder="Password" required>
+        <input name="password" type="password" placeholder="Password" pattern=".{8,}" required title="12 characters minimum">
         <br><br>
         <button type="submit">Sign up</button>
         <br><br>
