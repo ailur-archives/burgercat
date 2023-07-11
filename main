@@ -172,7 +172,7 @@ def chatlistrooms():
             "name": room["roomname"]
         }
         template.append(roomtemplate)
-    
+
     return(template), 200
 
 @app.route("/api/chat/getmessages/<roomid>")
@@ -196,7 +196,7 @@ def chatget(roomid):
             "created": message["created"]
         }
         template.append(messagetemplate)
-    
+
     return(template), 200
 
 burgerMessageUpdate = True
@@ -223,13 +223,10 @@ def chatsend(roomid):
                 }, 403
 
             conn = get_db_connection()
-            if not content.isspace():
-                    conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
+            conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
                          (content, roomid, userCookie["id"], str(time.time())))
-                    conn.commit()
-                    conn.close()
-            else:
-                # do something
+            conn.commit()
+            conn.close()
 
             global burgerMessageCache
             global burgerMessageUpdate
@@ -335,7 +332,7 @@ def apifrontpage():
             },
             "comments": comments
         }
-        
+
         result.append(mainthing)
 
     return result
@@ -425,7 +422,7 @@ def apipost():
                 return {
                     "error": "invalid file format"
                 }, 403
-            
+
             filename = secure_filename(file.filename)
             finalfilename = secrets.token_hex(64) + filename
 
@@ -525,7 +522,7 @@ def comment():
             data = request.get_json()
             uid = data["id"]
             title = data["title"]
-            
+
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
 
