@@ -72,9 +72,14 @@ async function sendMessage(content, id) {
 
 messageBox.addEventListener("keyup", function onEvent(event) {
     if (event.key === "Enter") {
-        sendMessage(messageBox.value, channelID)
-        updateMessages(channelID)
-        messageBox.value = ""
+        if (!messageBox.value.trim().length == 0) {
+            sendMessage(messageBox.value, channelID)
+            updateMessages(channelID)
+            messageBox.value = ""
+        }
+        else {
+            return;
+        }
     }
 })
 
