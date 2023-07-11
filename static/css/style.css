@@ -269,3 +269,100 @@ body {
 .hidden {
     display: none;
 }
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --gray-950: #030712;
+        --gray-900: #111827;
+        --gray-800: #1f2937;
+        --gray-700: #374151;
+        --gray-600: #4b5563;
+        --gray-500: #6b7280;
+        --gray-400: #9ca3af;
+        --gray-300: #d1d5db;
+        --gray-200: #e5e7eb;
+        --gray-100: #f3f4f6;
+        --gray-50: #f9fafb;
+    }
+
+	textarea {
+		background-color: var(--gray-800);
+		color: white
+	}
+	
+	/* fix some profile issues, this is important do NOT remove!!!! */
+	iframe {
+		background-color: white;
+	}
+	
+    body {
+        color: white;
+        background-color: var(--gray-900);
+    }
+
+    h1 {
+        color: white;
+    }
+
+    .post button, .post .commentdiv input, input, button  {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: white;
+    }
+
+    .navbar {
+        background-color: var(--gray-800);
+    }
+
+    .navbar a, a {
+        color: white;
+		border-size: 0px;
+		border-color: var(--gray-800);
+    }
+    
+	.accountform button {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: white;
+	}
+	
+	.profileDiv .edit-button {
+		color: var(--gray-50);
+		text-decoration: none;
+	}
+	
+    .post {
+        background-color: var(--gray-800);
+    }
+
+    .usernamelink {
+        color: white;
+    }
+
+    .post .date {
+        color: var(--gray-400);
+    }
+
+    .post .commentsdiv {
+        background-color: var(--gray-700);
+    }
+	
+	.messageBar {
+		background-color: var(--gray-900);
+	}
+	
+	.channelDiv {
+		background-color: var(--gray-800);
+	}
+	
+	.channelDiv button {
+		background-color: var(--gray-700);
+		color: white;
+	}
+
+	.channelDiv button:hover {
+		background-color: var(--gray-600);
+	}
+
+}
+}
