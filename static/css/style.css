@@ -364,5 +364,27 @@ body {
 		background-color: var(--gray-600);
 	}
 
+    .post .commentdiv input,
+    input {
+        border: solid 1px var(--gray-700);
+    }
+
+    .post .commentdiv input:hover,
+    input:hover,
+    .post .commentdiv input:focus,
+    input:focus {
+        outline: none;
+        border: solid 1px #f1b739;
+    }
+
+    .post {
+        background-color: var(--gray-800);
+        border: solid 1px var(--gray-700);
+    }
+
+    .navbar {
+        border-color: var(--gray-700);
+    }
+
 }
 }
