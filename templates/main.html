@@ -41,12 +41,6 @@
         <p><a href='/@{{ getUser(post["creator"])["username"] }}' class="username usernamelink">{{ getUser(post["creator"])["username"] }}</a></p>
         <p class="date" id='timestamp_{{post["id"]}}'> </p>
         {% if userdata %}
-        {% if userdata.administrator == 1 %}
-        <a class="date" href='/remove/{{post["id"]}}'>Remove post</a>
-        <br><br>
-        {% endif %}
-        {% endif %}
-        {% if userdata %}
         <p class="hidden" id="usernameElement">{{ userdata.username }}</p>
         {% endif %}
         <img loading="lazy" src='{{ post["imageurl"] }}'>
