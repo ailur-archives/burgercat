@@ -223,10 +223,13 @@ def chatsend(roomid):
                 }, 403
 
             conn = get_db_connection()
-            conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
+            if not content.isspace():
+                    conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
                          (content, roomid, userCookie["id"], str(time.time())))
-            conn.commit()
-            conn.close()
+                    conn.commit()
+                    conn.close()
+            else:
+                # do something
 
             global burgerMessageCache
             global burgerMessageUpdate
