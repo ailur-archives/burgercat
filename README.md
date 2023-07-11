@@ -13,3 +13,6 @@ python main
 ### zero downtime restarts:
 - launch new burgercat server
 - close previous server
+
+### contribution guidelines:
+- please check that your PR does not break anything

@@ -1,0 +1,18 @@
+#!/usr/bin/python3
+import sqlite3
+import time
+import os
+
+chatroomname = input("Insert name: ")
+
+def get_db_connection():
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+conn = get_db_connection()
+conn.execute("INSERT INTO chatrooms (roomname, creator, created) VALUES (?, ?, ?)",
+        (chatroomname, 1, str(time.time())))
+conn.commit()
+conn.close()
+print("Success!")

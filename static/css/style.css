@@ -16,20 +16,25 @@ body {
     background-color: white;
     width: 100%;
     position: fixed;
+    z-index: 2;
 }
+
 .navbar .selected {
     border: solid;
     border-color: #f1b739;
     border-width: 0;
     border-bottom-width: 2px;
 }
+
 .postDiv {
     padding-top: 120px;
 }
+
 .profileDiv {
     padding-left: 10px;
     padding-right: 10px;
 }
+
 .profileIFrame {
     border: solid;
     border-width: 0;
@@ -38,6 +43,7 @@ body {
     width: 100%;
     height: calc(100vh - 295px);
 }
+
 .profileDiv .badgeDiv p {
     background-color: black;
     border-radius: 99px;
@@ -47,15 +53,18 @@ body {
     padding-right: 10px;
     display: inline;
 }
+
 .editThing .htmlBox {
     width: calc(100% - 10px);
     height: 300px;
     text-align: top;
 }
+
 .accountform {
     margin-left: 20%;
     margin-right: 20%;
 }
+
 .accountform input {
     padding: 7px;
     border: solid;
@@ -65,6 +74,7 @@ body {
     font-size: 16px;
     border-radius: 8px;
 }
+
 .accountform .flash {
     padding: 7px;
     border: solid;
@@ -74,6 +84,7 @@ body {
     font-size: 16px;
     border-radius: 8px;
 }
+
 .accountform button {
     padding: 7px;
     border: solid;
@@ -124,6 +135,7 @@ body {
     font-size: 16px;
     font-family: "Inter", sans-serif;
 }
+
 .post button:hover {
     border-color: #f1b739;
 }
@@ -138,11 +150,13 @@ body {
     margin-top: 5px;
     font-family: "Inter", sans-serif;
 }
+
 .post hr {
     color: rgb(255, 255, 255);
     background-color: rgb(255, 255, 255);
     border-color: rgb(255, 255, 255);
 }
+
 .post .commentsdiv {
     background-color: #f5f5f5;
     padding: 5px;
@@ -161,6 +175,88 @@ body {
 .usernamelink {
     color: black;
     text-decoration: none;
+}
+
+.chatDiv {
+    width: 292vh;
+    margin-top: 2px;
+    height: calc(100vh - 121px);
+}
+
+.channelDiv {
+    position: absolute;
+    width: 220px;
+    height: calc(100%);
+    left: 0;
+    background-color: rgb(245, 245, 245);
+}
+
+.channelDiv .statusMessage {
+    position: absolute;
+    left: 10px;
+    bottom: 122.5px;
+}
+
+.channelDiv button {
+    width: calc(100% - 20px);
+    margin: 10px;
+    margin-bottom: 0;
+    padding-left: 10px;
+    background-color: white;
+    border: none;
+    border-radius: 8px;
+    color: black;
+    font-size: 16px;
+    text-align: left;
+    height: 40px;
+}
+
+.channelDiv .selected {
+    border: solid;
+    border-width: 1px;
+    border-color: #f1b739;
+}
+
+.channelDiv button:hover {
+    background-color: rgb(249, 249, 249);
+    transition: background-color ease-in-out 100ms
+}
+
+.messageDiv {
+    position: absolute;
+    width: calc(100% - 220px);
+    height: calc(100%);
+    padding-bottom: 50px;
+    right: 0;
+    margin-top: -180px;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.messageDiv p {
+    font-size: 16px;
+    margin-left: 10px;
+    line-height: 8px;
+    align-self: flex-start;
+}
+
+.messageBar {
+    position: absolute;
+    width: calc(100% - 220px);
+    height: 50px;
+    right: 0;
+    bottom: 0;
+    background-color: rgb(228, 228, 228);
+}
+
+.messageBar input {
+    width: calc(100% - 20px);
+    height: calc(100% - 15px);
+    border: none;
+    border-radius: 99px;
+    padding-left: 10px;
+    font-size: 15px;
+    margin: 5px;
 }
 
 .warning {

@@ -2,6 +2,8 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS chatrooms;
+DROP TABLE IF EXISTS chatmessages;
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,6 +29,21 @@ CREATE TABLE comments (
     created TEXT NOT NULL,
     creator TEXT NOT NULL,
     textstr TEXT NOT NULL
+);
+
+CREATE TABLE chatrooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created TEXT NOT NULL,
+    creator TEXT NOT NULL,
+    roomname TEXT NOT NULL
+);
+
+CREATE TABLE chatmessages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chatroom_id INTEGER NOT NULL,
+    created TEXT NOT NULL,
+    creator TEXT NOT NULL,
+    content TEXT NOT NULL
 );
 
 CREATE TABLE sessions (

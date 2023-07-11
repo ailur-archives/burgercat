@@ -82,6 +82,16 @@ def get_comments(id):
     return post
 
 
+def get_messages(chatroomid):
+    conn = get_db_connection()
+    post = conn.execute("SELECT * FROM chatmessages WHERE chatroom_id = ? ORDER BY created DESC;",
+                        (chatroomid,)).fetchall()
+    conn.close()
+    if post is None:
+        return "error"
+    return post
+
+
 app.jinja_env.globals.update(getComments=get_comments)
 
 def get_post(id):
@@ -138,6 +148,109 @@ def main():
     else:
         return render_template("main.html", posts=posts)
 
+@app.route("/chat", methods=("GET", "POST"))
+def chat():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if usersession:
+        userCookie = get_session(usersession)
+        user = get_user(userCookie["id"])
+        return render_template("chat.html", userdata=user)
+    else:
+        return render_template("chat.html")
+
+@app.route("/api/chat/listrooms")
+def chatlistrooms():
+    conn = get_db_connection()
+    rooms = conn.execute("SELECT * FROM chatrooms ORDER BY roomname ASC;").fetchall()
+    conn.close()
+
+    template = []
+
+    for room in rooms:
+        roomtemplate = {
+            "id": room["id"],
+            "name": room["roomname"]
+        }
+        template.append(roomtemplate)
+    
+    return(template), 200
+
+@app.route("/api/chat/getmessages/<roomid>")
+def chatget(roomid):
+    messages = get_messages(roomid)
+
+    template = []
+
+    for message in messages:
+        creatorid = message["creator"]
+
+        creatortemplate = {
+            "id": message["creator"],
+            "username": get_user(creatorid)["username"]
+        }
+
+        messagetemplate = {
+            "id": message["id"],
+            "content": message["content"],
+            "creator": creatortemplate,
+            "created": message["created"]
+        }
+        template.append(messagetemplate)
+    
+    return(template), 200
+
+burgerMessageUpdate = True
+burgerMessageCache = ""
+
+@app.route("/api/chat/send/<roomid>", methods=("GET", "POST"))
+def chatsend(roomid):
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if usersession:
+        if request.method == "POST":
+
+            data = request.get_json()
+            content = data["content"]
+
+            print(content)
+            print(roomid)
+
+            userCookie = get_session(usersession)
+            user = get_user(userCookie["id"])
+
+            if not user["banned"] == "0":
+                return {
+                    "error": "banned"
+                }, 403
+
+            conn = get_db_connection()
+            conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
+                         (content, roomid, userCookie["id"], str(time.time())))
+            conn.commit()
+            conn.close()
+
+            global burgerMessageCache
+            global burgerMessageUpdate
+            burgerMessageUpdate = True
+            burgerMessageCache = user["username"] + ": " + content
+
+            return "success", 200
+
+
+@sock.route("/api/chat/listen")
+def chatlisten(ws):
+    global burgerMessageCache
+    global burgerMessageUpdate
+
+    while burgerMessageUpdate == True:
+        ws.send(burgerMessageCache)
+        burgerMessageUpdate = False
+
+@app.route("/erm", methods=("GET", "POST"))
+def erm():
+    print(burgerMessageCache)
+    print(burgerMessageUpdate)
+
+    return "fart"
 
 @app.route("/@<pageusername>", methods=("GET", "POST"))
 def user(pageusername):
@@ -290,7 +403,7 @@ def apilogin():
 
         return {
                     "key": randomCharacters
-                }, 100
+                }, 200
     else:
         return {
             "error": "https://http.cat/images/400.jpg"
@@ -346,7 +459,7 @@ def apipost():
             conn.commit()
             conn.close()
 
-            return "success", 100
+            return "success", 200
 
 @app.route("/apidocs", methods=("GET", "POST"))
 def apidocs():
@@ -445,7 +558,7 @@ def comment():
             conn.commit()
             conn.close()
 
-            return "success", 100
+            return "success", 200
 
         else:
             return {
@@ -581,7 +694,7 @@ def delete():
                     conn.execute("DELETE FROM posts WHERE id = ?", (postid,))
                     conn.commit()
                     conn.close()
-                    return "success", 100
+                    return "success", 200
                 else:
                     return {
                         "error": "https://http.cat/images/403.jpg"
