@@ -19,14 +19,7 @@ async function updateMessages(id) {
             messageParagraph.id = "messageParagraph" + messages[i]["id"]
             messageParagraph.appendChild(timeParagraph)
 
-            let date = new Date(Number(messages[i]["created"].split(".")[0]));
-            let utcHours = date.getUTCHours().toString().padStart(2, '0');
-            let utcMinutes = date.getUTCMinutes().toString().padStart(2, '0');
-            let timeZoneOffset = date.getTimezoneOffset();
-            console.log(timeZoneOffset)
-            let hours = (utcHours - timeZoneOffset / 60 + 5).toString().padStart(2, '0');
-            let minutes = utcMinutes.toString().padStart(2, '0');
-            let time = (hours + ":" + minutes)
+            let time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(messages[i]["created"].split(".")[0]) * 1000 + 20275)
 
             messageParagraph.innerHTML = "<span style='color: #515051; font-size: 14px;'>" + time + "</span> " + messageParagraph.innerHTML
             messageDiv.append(messageParagraph)
