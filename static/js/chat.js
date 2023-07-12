@@ -19,7 +19,7 @@ async function updateMessages(id) {
             messageParagraph.id = "messageParagraph" + messages[i]["id"]
             messageParagraph.appendChild(timeParagraph)
 
-            let time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(messages[i]["created"].split(".")[0]) * 1000 + 20275)
+            let time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(messages[i]["created"].split(".")[0]) * 1000 + 20265)
 
             messageParagraph.innerHTML = "<span style='color: #515051; font-size: 14px;'>" + time + "</span> " + messageParagraph.innerHTML
             messageDiv.append(messageParagraph)
