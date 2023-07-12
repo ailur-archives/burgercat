@@ -5,29 +5,82 @@ let statusMessage = document.getElementById("statusMessage")
 
 let channelID = 0
 
+// create a cache to store the images (delete this once you add SSE)
+const imageCache = {};
+
 async function updateMessages(id) {
-    try {
-        let response = await fetch("/api/chat/getmessages/" + id);
-        let messages = await response.json()
-        statusMessage.innerText = ""
-        document.querySelectorAll(".messageParagraph").forEach(el => el.remove());
-        for (let i in messages) {
-            let messageParagraph = document.createElement("p")
-            let timeParagraph = document.createElement("p")
-            messageParagraph.appendChild(document.createTextNode(messages[i]["creator"]["username"] + ": " + messages[i]["content"]))
-            messageParagraph.classList.add("messageParagraph")
-            messageParagraph.id = "messageParagraph" + messages[i]["id"]
-            messageParagraph.appendChild(timeParagraph)
+  try {
+    const response = await fetch(`/api/chat/getmessages/${id}`);
+    const messages = await response.json();
+    statusMessage.innerText = "";
+    document.querySelectorAll(".messageParagraph").forEach((el) => el.remove());
 
-            let time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(messages[i]["created"].split(".")[0]) * 1000 + 20265)
+    for (const message of messages) {
+      const messageParagraph = document.createElement("p");
+      const timeParagraph = document.createElement("p");
+      const { creator, content, id, created } = message;
 
-            messageParagraph.innerHTML = "<span style='color: #515051; font-size: 14px;'>" + time + "</span> " + messageParagraph.innerHTML
-            messageDiv.append(messageParagraph)
+      messageParagraph.appendChild(document.createTextNode(`${creator.username}: ${content}`));
+      messageParagraph.classList.add("messageParagraph");
+      messageParagraph.id = `messageParagraph${id}`;
+      messageParagraph.appendChild(timeParagraph);
+
+      const time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(created.split(".")[0]) * 1000 + 20265);
+
+      messageParagraph.innerHTML = `<span style="color: #515051; font-size: 14px;">${time}</span> ${messageParagraph.innerHTML}`;
+      messageDiv.append(messageParagraph);
+
+      const imgLinks = content?.match(/(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com|burger\.ctaposter\.xyz)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi) || [];
+
+      for (const link of imgLinks) {
+        // delete the code below once you add sse
+        if (imageCache[link]) {
+          messageParagraph.appendChild(imageCache[link].cloneNode(true));
+        } else {
+        // delete the code above once you add sse
+          const img = new Image();
+          img.src = link;
+          img.className = "messageImage";
+          img.onload = () => {
+            const maxWidth = 400;
+            const maxHeight = 400;
+            let { width, height } = img;
+            if (width > maxWidth || height > maxHeight) {
+              const ratio = Math.min(maxWidth / width, maxHeight / height);
+              width *= ratio;
+              height *= ratio;
+            }
+            img.width = width;
+            img.height = height;
+            // delete the line below once you add sse
+            imageCache[link] = img.cloneNode(true);
+            messageParagraph.appendChild(img);
+          };
         }
+      }
     }
-    catch {
-        statusMessage.innerText = "Not connected"
+  } catch {
+    statusMessage.innerText = "Not connected";
+  }
+}
+
+function selectChannel(id) {
+    channelID = id
+
+    let selectedButton = channelDiv.querySelector(".selected");
+    if (selectedButton) {
+        selectedButton.classList.remove("selected");
     }
+
+    let channelButton = document.getElementById("channelButton" + id)
+    if (channelButton) {
+        channelButton.classList.add("selected")
+    }
+    else {
+        console.log("channelButton not found")
+    }
+
+    updateMessages(id)
 }
 
 function selectChannel(id) {
