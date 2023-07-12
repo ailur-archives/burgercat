@@ -654,7 +654,7 @@ def settings():
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
 
-        return render_template("settings.html", userdata=user)
+        return render_template("settings.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(user["created"]).split(".")[0])).strftime("%Y-%m-%d %H:%m:%S"))
     else:
         return redirect("/")
 

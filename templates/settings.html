@@ -25,16 +25,16 @@
     </div>
 
     <div class="postDiv">
-    <div class="post">
-        {% if userdata.administrator == 1 %}
-            Administrator<br><br>
-        {% endif %}
-        Logged in as {{ userdata.username }}
-        <br><br>
-        <a href="/@{{ userdata.username }}">View my public profile</a><br>
-        <a href="/settings/logout">Log out</a>
-    </div>
+        <div class="post">
+            <h3>Account</h3>
+            <p>Account Type: {% if userdata.administrator == 1 %}Administrator{% else %}Normal{% endif %}<br>
+            Username: {{ userdata.username }}<br>
+            User ID: {{ userdata.id }}<br>
+            Created on: {{ createddate }}</p>
+            <br>
+            <a href="/@{{ userdata.username }}">View my public profile</a><br>
+            <a href="/settings/logout">Log out</a>
+        </div>
     </div>
 </body>
-
 </html>
