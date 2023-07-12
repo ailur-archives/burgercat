@@ -13,9 +13,21 @@ async function updateMessages(id) {
         document.querySelectorAll(".messageParagraph").forEach(el => el.remove());
         for (let i in messages) {
             let messageParagraph = document.createElement("p")
+            let timeParagraph = document.createElement("p")
             messageParagraph.appendChild(document.createTextNode(messages[i]["creator"]["username"] + ": " + messages[i]["content"]))
             messageParagraph.classList.add("messageParagraph")
             messageParagraph.id = "messageParagraph" + messages[i]["id"]
+            messageParagraph.appendChild(timeParagraph)
+
+            let date = new Date(Number(messages[i]["created"].split(".")[0]));
+            let utcHours = date.getUTCHours().toString().padStart(2, '0');
+            let utcMinutes = date.getUTCMinutes().toString().padStart(2, '0');
+            let timeZoneOffset = date.getTimezoneOffset();
+            let hours = (utcHours - timeZoneOffset / 60 + 1).toString().padStart(2, '0');
+            let minutes = utcMinutes.toString().padStart(2, '0');
+            let time = (hours + ":" + minutes)
+
+            messageParagraph.innerHTML = "<span style='color: #515051; font-size: 14px;'>" + time + "</span> " + messageParagraph.innerHTML
             messageDiv.append(messageParagraph)
         }
     }
