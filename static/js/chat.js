@@ -23,6 +23,7 @@ async function updateMessages(id) {
             let utcHours = date.getUTCHours().toString().padStart(2, '0');
             let utcMinutes = date.getUTCMinutes().toString().padStart(2, '0');
             let timeZoneOffset = date.getTimezoneOffset();
+            console.log(timeZoneOffset)
             let hours = (utcHours - timeZoneOffset / 60 + 5).toString().padStart(2, '0');
             let minutes = utcMinutes.toString().padStart(2, '0');
             let time = (hours + ":" + minutes)
