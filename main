@@ -82,10 +82,10 @@ def get_comments(id):
     return post
 
 
-def get_messages(chatroomid):
+def get_messages(chatroomid, max):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM chatmessages WHERE chatroom_id = ? ORDER BY created DESC;",
-                        (chatroomid,)).fetchall()
+                        (chatroomid,)).fetchmany(max + 1)
     conn.close()
     if post is None:
         return "error"
@@ -176,8 +176,9 @@ def chatlistrooms():
     return(template), 200
 
 @app.route("/api/chat/getmessages/<roomid>")
+@limiter.exempt
 def chatget(roomid):
-    messages = get_messages(roomid)
+    messages = get_messages(roomid, 40)
 
     template = []
 
