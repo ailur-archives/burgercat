@@ -28,6 +28,7 @@ body {
 
 .postDiv {
     padding-top: 120px;
+    overflow-y: auto;
 }
 
 .profileDiv {
@@ -224,12 +225,12 @@ body {
 }
 
 .messageDiv {
-    position: absolute;
+    position: fixed;
     width: calc(100% - 220px);
-    height: calc(100%);
+    height: calc(100% - 180px);
     padding-bottom: 50px;
     right: 0;
-    margin-top: -180px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column-reverse;
 }
@@ -237,6 +238,7 @@ body {
 .messageDiv p {
     font-size: 16px;
     margin-left: 10px;
+    z-index: 0;
     line-height: 8px;
     align-self: flex-start;
 }
@@ -260,6 +262,20 @@ body {
     margin: 5px;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(240, 240, 240);
+  border-radius: 10px;
+}
+
 .warning {
     width: 100%;
     background-color: #f1b739;
@@ -275,6 +291,7 @@ body {
     :root {
         --gray-950: #030712;
         --gray-900: #111827;
+        --gray-850: #1D2533;
         --gray-800: #1f2937;
         --gray-700: #374151;
         --gray-600: #4b5563;
@@ -387,5 +404,9 @@ body {
         border-color: var(--gray-700);
     }
 
-}
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--gray-850);
+        border-radius: 10px;
+    }
+
 }
