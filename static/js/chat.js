@@ -21,10 +21,10 @@ async function updateMessages(id) {
       const { creator, content, id, created } = message;
 
       // Check if the message content contains any links that are not image links and hide image links
-      const linkRegex = /(https?:\/\/[^\s]+(?<!\.(?:png|apng|webp|svg|jpg|jpeg|gif)))(?=\s|$)|(?<=\s|^)(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com|burger\.ctaposter\.xyz)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi;
-      let messageContent = content.replace(linkRegex, "<a href='$1' target='_blank'>$1</a>");
+      const hideRegex = /(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi;
+      let messageContent = content.replace(hideRegex, "");
 
-      messageParagraph.innerHTML = `${creator.username}: ${messageContent}`;
+      messageParagraph.innerText = `${creator.username}: ${messageContent}`;
       messageParagraph.classList.add("messageParagraph");
       messageParagraph.id = `messageParagraph${id}`;
       messageParagraph.appendChild(timeParagraph);
