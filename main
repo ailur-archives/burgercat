@@ -127,17 +127,8 @@ def get_session(id):
         return "error"
     return post
 
-def get_current_commit(output_format="full"):
-    if output_format == "short":
-        length = 8
-    else:
-        length = 40
-
-    try:
-        output = subprocess.check_output(["git", "rev-parse", f"--short={length}", "HEAD"]).decode().strip()
-        return output
-    except subprocess.CalledProcessError:
-        return "Error fetching git commit"
+full_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+short_hash = subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode().strip()
 
 ALLOWED_EXTENSIONS = {"png", "apng", "jpg", "jpeg", "gif", "svg", "webp"}
 
@@ -151,16 +142,14 @@ def main():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     conn = get_db_connection()
     posts = conn.execute("SELECT * FROM posts ORDER BY created DESC;").fetchall()
-    commit_hash_long = get_current_commit()
-    commit_hash_short = get_current_commit(output_format="short")
     conn.close()
 
     if usersession:
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
-        return render_template("main.html", userdata=user, posts=posts, commit_hash_long=commit_hash_long, commit_hash_short=commit_hash_short)
+        return render_template("main.html", userdata=user, posts=posts, full_hash=full_hash, short_hash=short_hash)
     else:
-        return render_template("main.html", posts=posts, commit_hash_long=commit_hash_long, commit_hash_short=commit_hash_short)
+        return render_template("main.html", posts=posts, full_hash=full_hash, short_hash=short_hash)
 
 @app.route("/chat", methods=("GET", "POST"))
 def chat():
