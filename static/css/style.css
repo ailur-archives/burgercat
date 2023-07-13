@@ -19,6 +19,20 @@ body {
     z-index: 2;
 }
 
+.bottom {
+    margin: 0;
+    border: solid;
+    border-color: grey;
+    border-width: 0;
+    border-bottom-width: 1px;
+    background-color: white;
+}
+
+.bottom a {
+    color: lightgrey;
+    text-decoration: none;
+}
+
 .navbar .selected {
     border: solid;
     border-color: #f1b739;
@@ -330,6 +344,14 @@ body {
 
     .navbar {
         background-color: var(--gray-800);
+    }
+
+    .bottom {
+        background-color: var(--gray-900);
+    }
+
+    .bottom a {
+        color: var(--gray-800)
     }
 
     .navbar a, a {
