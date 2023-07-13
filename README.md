@@ -16,3 +16,5 @@ python main
 
 ### contribution guidelines:
 - please check that your PR does not break anything
+- unless absolutely nessecary, avoid adding dependecies
+- for consistency, use quotation marks, not apostrophes when possible
