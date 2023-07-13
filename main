@@ -7,6 +7,7 @@ import json
 import secrets
 import datetime
 import socket
+import subprocess
 from itertools import groupby
 from waitress import serve
 from werkzeug.utils import secure_filename
@@ -126,6 +127,8 @@ def get_session(id):
         return "error"
     return post
 
+full_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+short_hash = subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode().strip()
 
 ALLOWED_EXTENSIONS = {"png", "apng", "jpg", "jpeg", "gif", "svg", "webp"}
 
@@ -144,9 +147,9 @@ def main():
     if usersession:
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
-        return render_template("main.html", userdata=user, posts=posts)
+        return render_template("main.html", userdata=user, posts=posts, full_hash=full_hash, short_hash=short_hash)
     else:
-        return render_template("main.html", posts=posts)
+        return render_template("main.html", posts=posts, full_hash=full_hash, short_hash=short_hash)
 
 @app.route("/chat", methods=("GET", "POST"))
 def chat():
