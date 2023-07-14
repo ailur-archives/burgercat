@@ -5,67 +5,56 @@ let statusMessage = document.getElementById("statusMessage")
 
 let channelID = 0
 
-// create a cache to store the images (delete this once you add SSE)
-const imageCache = {};
+function addMessage(content, created, creator, roomid) {
+    const messageParagraph = document.createElement("p");
+    const timeParagraph = document.createElement("p");
+
+    const hideRegex = /(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi;
+    let messageContent = content.replace(hideRegex, "");
+
+    messageParagraph.innerText = `${creator}: ${messageContent}`;
+    messageParagraph.classList.add("messageParagraph");
+    messageParagraph.id = "messageParagraph";
+    messageParagraph.appendChild(timeParagraph);
+
+    const time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(created.split(".")[0]) * 1000 + 20265);
+
+    messageParagraph.innerHTML = `<span style="color: #515051; font-size: 14px;">${time}</span> ${messageParagraph.innerHTML}`;
+    messageDiv.append(messageParagraph);
+
+    const imgLinks = content?.match(/(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com|burger\.ctaposter\.xyz)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi) || [];
+
+    for (const link of imgLinks) {
+        const img = new Image();
+        img.src = link;
+        img.className = "messageImage";
+        img.onload = () => {
+            const maxWidth = 400;
+            const maxHeight = 400;
+            let { width, height } = img;
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+            img.width = width;
+            img.height = height;
+            messageParagraph.appendChild(img);
+        };
+    }
+    messageDiv.scrollTop = messageDiv.scrollHeight - messageDiv.clientHeight;
+}
 
 async function updateMessages(id) {
-  try {
     const response = await fetch(`/api/chat/getmessages/${id}`);
     const messages = await response.json();
     statusMessage.innerText = "";
     document.querySelectorAll(".messageParagraph").forEach((el) => el.remove());
 
-    for (const message of messages) {
-      const messageParagraph = document.createElement("p");
-      const timeParagraph = document.createElement("p");
-      const { creator, content, id, created } = message;
-
-      // Check if the message content contains any links that are not image links and hide image links
-      const linkRegex = /(https?:\/\/[^\s]+(?<!\.(?:png|apng|webp|svg|jpg|jpeg|gif)))(?=\s|$)|(?<=\s|^)(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com|burger\.ctaposter\.xyz)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi;
-      let messageContent = content.replace(linkRegex, "<a href='$1' target='_blank'>$1</a>");
-
-      messageParagraph.innerHTML = `${creator.username}: ${messageContent}`;
-      messageParagraph.classList.add("messageParagraph");
-      messageParagraph.id = `messageParagraph${id}`;
-      messageParagraph.appendChild(timeParagraph);
-
-      const time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric" }).format(Number(created.split(".")[0]) * 1000 + 20265);
-
-      messageParagraph.innerHTML = `<span style="color: #515051; font-size: 14px;">${time}</span> ${messageParagraph.innerHTML}`;
-      messageDiv.append(messageParagraph);
-
-      const imgLinks = content?.match(/(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com|burger\.ctaposter\.xyz)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi) || [];
-
-      for (const link of imgLinks) {
-        // delete the code below once you add sse
-        if (imageCache[link]) {
-          messageParagraph.appendChild(imageCache[link].cloneNode(true));
-        } else {
-        // delete the code above once you add sse
-          const img = new Image();
-          img.src = link;
-          img.className = "messageImage";
-          img.onload = () => {
-            const maxWidth = 400;
-            const maxHeight = 400;
-            let { width, height } = img;
-            if (width > maxWidth || height > maxHeight) {
-              const ratio = Math.min(maxWidth / width, maxHeight / height);
-              width *= ratio;
-              height *= ratio;
-            }
-            img.width = width;
-            img.height = height;
-            // delete the line below once you add sse
-            imageCache[link] = img.cloneNode(true);
-            messageParagraph.appendChild(img);
-          };
-        }
-      }
+    for (const message of messages.reverse()) {
+        const { creator, content, roomid, created } = message;
+        addMessage(content, created, creator["username"], roomid)
     }
-  } catch {
-    statusMessage.innerText = "Not connected";
-  }
 }
 
 function selectChannel(id) {
@@ -138,20 +127,27 @@ messageBox.addEventListener("keyup", function onEvent(event) {
         if (!messageBox.value == "") {
             if (messageBox.value.length < 140) {
                 sendMessage(messageBox.value, channelID)
-                updateMessages(channelID)
                 messageBox.value = ""
             }
         }
     }
 })
 
-function update() {
-    updateMessages(channelID)
-
-    setTimeout(update, 1500);
-}
+let messageStream = new EventSource("/stream")
 
 window.addEventListener("load", function () {
     updateRooms()
-    update()
+    updateMessages(channelID)
+
+    messageStream.addEventListener("publish", function (event) {
+        results = JSON.parse(event.data)
+
+        if (Number(results["message"]["roomid"]) == channelID) {
+            addMessage(results["message"]["content"], results["message"]["created"], results["message"]["creator"], results["message"]["roomid"])
+        }
+    })
+})
+
+window.addEventListener("beforeunload", function () {
+    messageStream.close()
 })

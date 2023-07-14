@@ -7,6 +7,7 @@ import json
 import secrets
 import datetime
 import socket
+import threading
 import subprocess
 from itertools import groupby
 from waitress import serve
@@ -16,6 +17,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_sse import sse
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # read config file
 config = configparser.ConfigParser()
@@ -26,10 +29,13 @@ SECRET_KEY = config["config"]["SECRET_KEY"]
 UPLOAD_FOLDER = config["config"]["UPLOAD_FOLDER"]
 UPLOAD_LIMIT = config["config"]["UPLOAD_LIMIT"]
 PASSWORD_REQUIREMENT = config["config"]["PASSWORD_REQUIREMENT"]
+REDIS_URL = config["config"]["REDIS_URL"]
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
+app.config["REDIS_URL"] = REDIS_URL
 app.config["MAX_CONTENT_LENGTH"] = int(UPLOAD_LIMIT) * 1000 * 1000
+app.register_blueprint(sse, url_prefix="/stream")
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
@@ -164,7 +170,7 @@ def chat():
 @app.route("/api/chat/listrooms")
 def chatlistrooms():
     conn = get_db_connection()
-    rooms = conn.execute("SELECT * FROM chatrooms ORDER BY roomname ASC;").fetchall()
+    rooms = conn.execute("SELECT * FROM chatrooms ORDER BY id ASC;").fetchall()
     conn.close()
 
     template = []
@@ -181,7 +187,7 @@ def chatlistrooms():
 @app.route("/api/chat/getmessages/<roomid>")
 @limiter.exempt
 def chatget(roomid):
-    messages = get_messages(roomid, 40)
+    messages = get_messages(roomid, 150)
 
     template = []
 
@@ -203,9 +209,6 @@ def chatget(roomid):
     
     return(template), 200
 
-burgerMessageUpdate = True
-burgerMessageCache = ""
-
 @app.route("/api/chat/send/<roomid>", methods=("GET", "POST"))
 def chatsend(roomid):
     usersession = request.cookies.get("session_DO_NOT_SHARE")
@@ -215,9 +218,6 @@ def chatsend(roomid):
             data = request.get_json()
             content = data["content"]
 
-            print(content)
-            print(roomid)
-
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
 
@@ -226,16 +226,20 @@ def chatsend(roomid):
                     "error": "banned"
                 }, 403
 
+            chatMessageContent = {
+                "content": content,
+                "creator": user["username"],
+                "roomid": roomid,
+                "created": str(time.time())
+            }
+
+            sse.publish({"message": chatMessageContent}, type="publish")
+
             conn = get_db_connection()
             conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
                          (content, roomid, userCookie["id"], str(time.time())))
             conn.commit()
             conn.close()
-
-            global burgerMessageCache
-            global burgerMessageUpdate
-            burgerMessageUpdate = True
-            burgerMessageCache = user["username"] + ": " + content
 
             return "success", 200
 
@@ -699,6 +703,6 @@ if __name__ == "__main__":
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         sock.bind(('', int(PORT)))
-        serve(app, sockets=[sock])
+        serve(app, sockets=[sock], threads=9999)
 
     print("[INFO] Server stopped")

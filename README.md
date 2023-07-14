@@ -1,7 +1,7 @@
 burgercat: burger social media
 
 ### self hosting:
-this guide assumes you have git and python3 installed
+this guide assumes you have git, python3, and redis installed on your server
 
 ```
 git clone https://codeberg.org/burger-software/burgercat

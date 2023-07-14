@@ -1,5 +1,7 @@
-flask
+Flask
 Flask-Limiter
 werkzeug
 waitress
 requests
+Flask-SSE
+APScheduler
