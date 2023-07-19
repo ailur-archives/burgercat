@@ -36,6 +36,7 @@
     <p class="warning">Your account has been banned. Reason: "{{ userdata.banned }}". <a href="/settings/logout">Log out</a></p>
     {% endif %}
     {% endif %}
+    <p class="warning">⚠️ burgercat will permanently shut down on July 21th. ⚠️ <a href="/static/shutdown.html">Read more</a></p>
     {% for post in posts %}
     <div class="post" id="post">
         <p><a href='/@{{ getUser(post["creator"])["username"] }}' class="username usernamelink">{{ getUser(post["creator"])["username"] }}</a></p>
