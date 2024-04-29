@@ -9,7 +9,7 @@ function addMessage(content, created, creator, roomid) {
     const messageParagraph = document.createElement("p");
     const timeParagraph = document.createElement("p");
 
-    const hideRegex = /(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|i\.imgur\.com)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi;
+    const hideRegex = /(https?:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net|media\.tenor\.com|media1\.tenor\.com|i\.imgur\.com)\/.+?\.(?:png|apng|webp|svg|jpg|jpeg|gif))(?=$|\s)/gi;
     let messageContent = content.replace(hideRegex, "");
 
     messageParagraph.innerText = `${creator}: ${messageContent}`;
