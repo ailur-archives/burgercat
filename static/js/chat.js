@@ -76,25 +76,6 @@ function selectChannel(id) {
     updateMessages(id)
 }
 
-function selectChannel(id) {
-    channelID = id
-
-    let selectedButton = channelDiv.querySelector(".selected");
-    if (selectedButton) {
-        selectedButton.classList.remove("selected");
-    }
-
-    let channelButton = document.getElementById("channelButton" + id)
-    if (channelButton) {
-        channelButton.classList.add("selected")
-    }
-    else {
-        console.log("channelButton not found")
-    }
-
-    updateMessages(id)
-}
-
 async function updateRooms() {
     let response = await fetch("/api/chat/listrooms");
     let rooms = await response.json()
@@ -122,32 +103,34 @@ async function sendMessage(content, id) {
     })
 }
 
+let updateInterval = 4100
+
 messageBox.addEventListener("keyup", function onEvent(event) {
     if (event.key === "Enter") {
         if (!messageBox.value == "") {
             if (messageBox.value.length < 140) {
                 sendMessage(messageBox.value, channelID)
                 messageBox.value = ""
+                updateInterval = 1300
             }
+            updateMessages(channelID)
         }
     }
 })
 
-let messageStream = new EventSource("/stream")
-
-window.addEventListener("load", function () {
-    updateRooms()
+function messageTimer(){
     updateMessages(channelID)
+    if (updateInterval < 6000) {
+        updateInterval = updateInterval + 100
+    }
 
-    messageStream.addEventListener("publish", function (event) {
-        results = JSON.parse(event.data)
+    console.log(updateInterval)
+    setTimeout(messageTimer, updateInterval);
+}
 
-        if (Number(results["message"]["roomid"]) == channelID) {
-            addMessage(results["message"]["content"], results["message"]["created"], results["message"]["creator"], results["message"]["roomid"])
-        }
-    })
-})
+messageTimer();
+    
+ 
+updateRooms()
+updateMessages()
 
-window.addEventListener("beforeunload", function () {
-    messageStream.close()
-})

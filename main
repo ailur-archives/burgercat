@@ -9,15 +9,13 @@ import datetime
 import socket
 import threading
 import subprocess
+import asyncio
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 from itertools import groupby
-from waitress import serve
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.middleware.proxy_fix import ProxyFix
-from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_sse import sse
+from quart import Quart, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request, jsonify, websocket
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # read config file
@@ -29,23 +27,10 @@ SECRET_KEY = config["config"]["SECRET_KEY"]
 UPLOAD_FOLDER = config["config"]["UPLOAD_FOLDER"]
 UPLOAD_LIMIT = config["config"]["UPLOAD_LIMIT"]
 PASSWORD_REQUIREMENT = config["config"]["PASSWORD_REQUIREMENT"]
-REDIS_URL = config["config"]["REDIS_URL"]
 
-app = Flask(__name__)
+app = Quart(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
-app.config["REDIS_URL"] = REDIS_URL
 app.config["MAX_CONTENT_LENGTH"] = int(UPLOAD_LIMIT) * 1000 * 1000
-app.register_blueprint(sse, url_prefix="/stream")
-
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
-
-limiter = Limiter(
-    get_remote_address,
-    app = app,
-    default_limits = ["3 per second"],
-    storage_uri = "memory://",
-    strategy = "fixed-window"
-)
 
 if SECRET_KEY == "placeholder":
     print("[WARNING] Secret key is not set")
@@ -136,15 +121,14 @@ def get_session(id):
 full_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
 short_hash = subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode().strip()
 
-ALLOWED_EXTENSIONS = {"png", "apng", "jpg", "jpeg", "gif", "svg", "webp"}
+ALLOWED_EXTENSIONS = {"png", "apng", "jpg", "jpeg", "gif", "svg", "webp", "jxl"}
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @app.route("/", methods=("GET", "POST"))
-def main():
+async def main():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     conn = get_db_connection()
     posts = conn.execute("SELECT * FROM posts ORDER BY created DESC;").fetchall()
@@ -153,22 +137,22 @@ def main():
     if usersession:
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
-        return render_template("main.html", userdata=user, posts=posts, full_hash=full_hash, short_hash=short_hash)
+        return await render_template("main.html", userdata=user, posts=posts, full_hash=full_hash, short_hash=short_hash)
     else:
-        return render_template("main.html", posts=posts, full_hash=full_hash, short_hash=short_hash)
+        return await render_template("main.html", posts=posts, full_hash=full_hash, short_hash=short_hash)
 
 @app.route("/chat", methods=("GET", "POST"))
-def chat():
+async def chat():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
-        return render_template("chat.html", userdata=user)
+        return await render_template("chat.html", userdata=user)
     else:
-        return render_template("chat.html")
+        return await render_template("chat.html")
 
 @app.route("/api/chat/listrooms")
-def chatlistrooms():
+async def chatlistrooms():
     conn = get_db_connection()
     rooms = conn.execute("SELECT * FROM chatrooms ORDER BY id ASC;").fetchall()
     conn.close()
@@ -185,8 +169,7 @@ def chatlistrooms():
     return(template), 200
 
 @app.route("/api/chat/getmessages/<roomid>")
-@limiter.exempt
-def chatget(roomid):
+async def chatget(roomid):
     messages = get_messages(roomid, 150)
 
     template = []
@@ -209,13 +192,14 @@ def chatget(roomid):
     
     return(template), 200
 
+
 @app.route("/api/chat/send/<roomid>", methods=("GET", "POST"))
-def chatsend(roomid):
+async def chatsend(roomid):
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         if request.method == "POST":
 
-            data = request.get_json()
+            data = await request.get_json()
             content = data["content"]
 
             userCookie = get_session(usersession)
@@ -233,7 +217,7 @@ def chatsend(roomid):
                 "created": str(time.time())
             }
 
-            sse.publish({"message": chatMessageContent}, type="publish")
+            #message_queue.append({"message": chatMessageContent})
 
             conn = get_db_connection()
             conn.execute("INSERT INTO chatmessages (content, chatroom_id, creator, created) VALUES (?, ?, ?, ?)",
@@ -245,7 +229,7 @@ def chatsend(roomid):
 
 
 @app.route("/@<pageusername>", methods=("GET", "POST"))
-def user(pageusername):
+async def user(pageusername):
     usersession = request.cookies.get("session_DO_NOT_SHARE")
 
     checkusername = check_username_taken(pageusername)
@@ -255,20 +239,20 @@ def user(pageusername):
         if usersession:
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
-            return render_template("user.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+            return await render_template("user.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
         else:
-            return render_template("user.html", createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+            return await render_template("user.html", createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
     else:
         return """<img src="https://http.cat/images/404.jpg">""", 404
 
 @app.route("/api/page/<userid>", methods=("GET", "POST"))
-def apipageuser(userid):
+async def apipageuser(userid):
     pageuser = get_user(userid)
     addhtml = """
     <!DOCTYPE html><script>
     window.stop()
     </script>
-    <base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; style-src: 'self';" /></head>"""
+    <base target="_blank"/> <head><meta http-equiv="Content-Security-Policy" default-src='none'; content="img-src cdn.discordapp.com cdn.discordapp.net media.tenor.com; media-src: fonts.gstatic.com fonts.googleapis.com; style-src: 'self';" /></head>"""
 
     if not pageuser == "error":
         return addhtml + pageuser["htmldescription"]
@@ -276,7 +260,7 @@ def apipageuser(userid):
         return """<img src="https://http.cat/images/404.jpg">""", 404
 
 @app.route("/@<pageusername>/edit", methods=("GET", "POST"))
-def edituser(pageusername):
+async def edituser(pageusername):
     usersession = request.cookies.get("session_DO_NOT_SHARE")
 
     checkusername = check_username_taken(pageusername)
@@ -288,7 +272,9 @@ def edituser(pageusername):
             user = get_user(userCookie["id"])
             if pageuser["username"] == user["username"]:
                 if request.method == "POST":
-                    code = request.form["code"].replace("Content-Security-Policy", "").replace("<iframe>", "")
+                    requestData = await request.form
+
+                    code = requestData["code"].replace("Content-Security-Policy", "").replace("<iframe>", "")
                     conn = get_db_connection()
                     conn.execute("UPDATE users SET htmldescription = ? WHERE id = ?",
                         (code, user["id"]))
@@ -296,7 +282,7 @@ def edituser(pageusername):
                     conn.close()
                     return redirect("/@" + user["username"])
                 else:
-                    return render_template("edituser.html", userdata=user, pageuser=pageuser)
+                    return await render_template("edituser.html", userdata=user, pageuser=pageuser)
             else:
                 return """<img src="https://http.cat/images/403.jpg">""", 403
         else:
@@ -306,7 +292,7 @@ def edituser(pageusername):
 
 
 @app.route("/api/frontpage", methods=("GET", "POST"))
-def apifrontpage():
+async def apifrontpage():
     conn = get_db_connection()
     posts = conn.execute("SELECT * FROM posts ORDER BY created DESC;").fetchall()
     conn.close()
@@ -346,7 +332,7 @@ def apifrontpage():
     return result
 
 @app.route("/api/userinfo", methods=("GET", "POST"))
-def apiuserinfo():
+async def apiuserinfo():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         userCookie = get_session(usersession)
@@ -363,12 +349,11 @@ def apiuserinfo():
                 }, 403
 
 
-@limiter.limit("10/minute", override_defaults=False)
 @app.route("/api/login", methods=("GET", "POST"))
-def apilogin():
+async def apilogin():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         username = data["username"]
         password = data["password"]
 
@@ -402,55 +387,55 @@ def apilogin():
         }, 400
 
 @app.route("/apidocs", methods=("GET", "POST"))
-def apidocs():
+async def apidocs():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
 
     if usersession:
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
-        return render_template("apidocs.html", userdata=user)
+        return await render_template("apidocs.html", userdata=user)
     else:
-        return render_template("apidocs.html")
+        return await render_template("apidocs.html")
 
 @app.route("/post", methods=("GET", "POST"))
-def post():
+async def post():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         if request.method == "POST":
-            title = request.form["title"]
+            formData = await request.form
+            formFiles = await request.files
+
+            title = formData["title"]
             if title == "":
-                flash("Text required :3")
+                await flash("Text required :3")
                 return redirect(url_for("post"))
 
             if len(title) > 300:
-                flash("Too long title!")
+                await flash("Too long title!")
                 return redirect(url_for("post"))
 
-            if "file" not in request.files:
-                flash("No file selected :3")
-                return redirect(url_for("post"))
+            file = formFiles["file"]
 
-            file = request.files["file"]
-            if file.filename == "":
-                flash("No file selected :3")
-                return redirect(url_for("post"))
-
-            if not allowed_file(file.filename):
-                flash("File is not an image!")
-                return redirect(url_for("post"))
+            if (file):
+                if not allowed_file(file.filename):
+                    await flash("File is not an image!")
+                    return redirect(url_for("post"))
 
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
 
             if not user["banned"] == "0":
-                flash("Your account has been banned. You may no longer perform this action.")
+                await flash("Your account has been suspended. You may no longer post")
                 return redirect(url_for("post"))
 
             filename = secure_filename(file.filename)
             finalfilename = secrets.token_hex(32) + filename
 
-            file.save(os.path.join(UPLOAD_FOLDER, finalfilename))
+            await file.save(os.path.join(UPLOAD_FOLDER, finalfilename))
             imgurl = "/cdn/" + finalfilename
+
+            if (not file):
+                imgurl = ""
 
             conn = get_db_connection()
             conn.execute("INSERT INTO posts (textstr, imageurl, creator, created) VALUES (?, ?, ?, ?)",
@@ -462,20 +447,19 @@ def post():
         else:
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
-            return render_template("post.html", userdata=user)
+            return await render_template("post.html", userdata=user)
     else:
         flash("A burgercat account is required to post :3")
         return redirect(url_for("login"))
 
 
 @app.route("/api/comment", methods=("GET", "POST"))
-@limiter.limit("1/second", override_defaults=False)
-def comment():
+async def comment():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         if request.method == "POST":
 
-            data = request.get_json()
+            data = await request.get_json()
             uid = data["id"]
             title = data["title"]
             
@@ -510,7 +494,7 @@ def comment():
                 }, 401
 
 @app.route("/api/post/<post_id>/comments", methods=("GET", "POST"))
-def apicomments(post_id):
+async def apicomments(post_id):
     postthing = get_comments(int(post_id))
 
     if not postthing == "error":
@@ -528,61 +512,62 @@ def apicomments(post_id):
         return comments
 
 @app.route("/cdn/<filename>", methods=("GET", "POST"))
-@limiter.exempt
-def cdn(filename):
+async def cdn(filename):
     if os.path.exists(os.path.join(UPLOAD_FOLDER, filename)):
-        return send_from_directory(UPLOAD_FOLDER, filename)
+        return await send_from_directory(UPLOAD_FOLDER, filename)
     else:
         return "file doesn't exist!!"
 
 
 @app.route("/signup", methods=("GET", "POST"))
-@limiter.limit("5/minute", override_defaults=False)
-def signup():
+async def signup():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         return redirect(url_for("main"))
     if request.method == "POST":
-        if not check_username_taken(request.form["username"]) == "error":
-            flash("Username already taken :3")
+        requestData = await request.form
+
+        if not check_username_taken(requestData["username"]) == "error":
+            await flash("Username already taken :3")
             return redirect(url_for("signup"))
 
-        if not request.form["username"].isalnum():
-            flash("Username must be alphanumeric :3")
+        if not requestData["username"].isalnum():
+            await flash("Username must be alphanumeric :3")
             return redirect(url_for("signup"))
 
-        if not len(request.form["password"]) > int(PASSWORD_REQUIREMENT):
-            flash("Password must contain at least " + PASSWORD_REQUIREMENT + " characters")
+        if not len(requestData["password"]) > int(PASSWORD_REQUIREMENT):
+            await flash("Password must contain at least " + PASSWORD_REQUIREMENT + " characters")
             return redirect(url_for("signup"))
 
-        hashedpassword = generate_password_hash(request.form["password"])
+        hashedpassword = generate_password_hash(requestData["password"])
 
         conn = get_db_connection()
         conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
-                     (request.form["username"], hashedpassword, str(time.time()), ""))
+                     (requestData["username"], hashedpassword, str(time.time()), ""))
         conn.commit()
         conn.close()
 
         return redirect(url_for("login"))
     else:
-        return render_template("signup.html")
+        return await render_template("signup.html")
 
 
 @app.route("/login", methods=("GET", "POST"))
-@limiter.limit("10/minute", override_defaults=False)
-def login():
+async def login():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         redirect(url_for("main"))
     if request.method == "POST":
-        userID = check_username_taken(request.form["username"])
+        requestData = await request.form
+
+        userID = check_username_taken(requestData["username"])
         user = get_user(userID)
 
         if user == "error":
             flash("Wrong username or password :3")
             return redirect(url_for("login"))
 
-        if not check_password_hash(user["password"], (request.form["password"])):
+        if not check_password_hash(user["password"], (requestData["password"])):
             flash("Wrong username or password :3")
             return redirect(url_for("login"))
 
@@ -594,32 +579,37 @@ def login():
         conn.commit()
         conn.close()
 
-        resp = make_response(redirect("/"))
-        resp.set_cookie("session_DO_NOT_SHARE", randomCharacters, expires=datetime.datetime.now() + datetime.timedelta(days=float(180)))
+        response = Response("""<script>window.location.href = "/";</script>""")
+        response.set_cookie("session_DO_NOT_SHARE", randomCharacters)
+        return response
 
-        return resp
+        #resp = await make_response(redirect("/"))
+        #resp.set_cookie("session_DO_NOT_SHARE", randomCharacters, expires=datetime.datetime.now() + datetime.timedelta(days=float(180)))
+
+        #return redirect("/")
+
     else:
-        return render_template("login.html")
+        return await render_template("login.html")
 
 
 @app.route("/settings", methods=("GET", "POST"))
-def settings():
+async def settings():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
 
-        return render_template("settings.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(user["created"]).split(".")[0])).strftime("%Y-%m-%d %H:%m:%S"))
+        return await render_template("settings.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(user["created"]).split(".")[0])).strftime("%Y-%m-%d %H:%m:%S"))
     else:
         return redirect("/")
 
 
 @app.route("/api/delete", methods=("GET", "POST"))
-def delete():
+async def delete():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
 
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         postid = int(data["id"])
 
         post = get_post(postid)
@@ -645,7 +635,7 @@ def delete():
         }, 400
 
 @app.route("/listusers", methods=("GET", "POST"))
-def listusers():
+async def listusers():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         userCookie = get_session(usersession)
@@ -667,7 +657,7 @@ def listusers():
 
 
 @app.route("/settings/logout", methods=("GET", "POST"))
-def logout():
+async def logout():
     resp = redirect(url_for("main"))
     session = request.cookies.get("session_DO_NOT_SHARE")
     resp.delete_cookie("session_DO_NOT_SHARE")
@@ -675,34 +665,32 @@ def logout():
     return resp
 
 @app.errorhandler(500)
-def page_not_found(e):
+async def page_not_found(e):
     return """<img src="https://http.cat/images/500.jpg">""", 500
 
 @app.errorhandler(400)
-def page_not_found(e):
+async def page_not_found(e):
     return """<img src="https://http.cat/images/400.jpg">""", 400
 
 @app.errorhandler(429)
-def page_not_found(e):
+async def page_not_found(e):
     return """<img src="https://http.cat/images/429.jpg">""", 429
 
 @app.errorhandler(404)
-def page_not_found(e):
+async def page_not_found(e):
     return """<img src="https://http.cat/images/404.jpg">""", 404
 
 @app.errorhandler(413)
-def page_not_found(e):
+async def page_not_found(e):
     return "Images can't be larger than " + str(UPLOAD_LIMIT) + "MB", 413
 
 
 if __name__ == "__main__":
     print("[INFO] Server started")
 
-    with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
-        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        sock.bind(('', int(PORT)))
-        serve(app, sockets=[sock], threads=9999)
+    hypercornconfig = Config()
+    hypercornconfig.bind = ("0.0.0.0" + ":" + PORT)
+
+    asyncio.run(serve(app, hypercornconfig))
 
     print("[INFO] Server stopped")

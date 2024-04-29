@@ -36,7 +36,6 @@
     <p class="warning">Your account has been banned. Reason: "{{ userdata.banned }}". <a href="/settings/logout">Log out</a></p>
     {% endif %}
     {% endif %}
-    <p class="warning">⚠️ burgercat will permanently shut down on July 21th. ⚠️ <a href="/static/shutdown.html">Read more</a></p>
     {% for post in posts %}
     <div class="post" id="post">
         <p><a href='/@{{ getUser(post["creator"])["username"] }}' class="username usernamelink">{{ getUser(post["creator"])["username"] }}</a></p>
@@ -44,7 +43,9 @@
         {% if userdata %}
         <p class="hidden" id="usernameElement">{{ userdata.username }}</p>
         {% endif %}
+        {% if post["imageurl"] != "" %}
         <img loading="lazy" src='{{ post["imageurl"] }}'>
+        {% endif %}
         <p class="text">{{ post["textstr"] }}</p>
         {% if getComments(post["id"]) | length > 0 %}
         <div id="commentBurgerDiv" class="commentsdiv">
@@ -113,12 +114,6 @@
         </script>
     </div>
     {% endfor %}
-    </div>
-    <div class="bottom">
-        <span>
-            <a href="https://codeberg.org/burger-software/burgercat">burgercat</a>
-            <a href="https://codeberg.org/burger-software/burgercat/commit/{{ full_hash }}" style="float: right;">commit hash: {{ short_hash }}</a>
-        </span>
     </div>
     <script src="/static/js/main.js"></script>
 </body>

@@ -1,5 +1,7 @@
 burgercat: burger social media
 
+now back again!
+
 ### self hosting:
 this guide assumes you have git, python3, and redis installed on your server
 
@@ -9,10 +11,6 @@ cd burgercat
 python init_db
 python main
 ```
-
-### zero downtime restarts:
-- launch new burgercat server
-- close previous server
 
 ### contribution guidelines:
 - please check that your PR does not break anything

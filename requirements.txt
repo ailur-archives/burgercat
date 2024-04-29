@@ -1,7 +1,4 @@
-Flask
-Flask-Limiter
+quart
 werkzeug
-waitress
+hypercorn
 requests
-Flask-SSE
-APScheduler

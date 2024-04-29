@@ -26,13 +26,14 @@
 
     <div class="postDiv">
         <div class="post">
-            <h3>Account</h3>
-            <p>Account Type: {% if userdata.administrator == 1 %}Administrator{% else %}Normal{% endif %}<br>
+            <h2>Your account</h2>
+            <a href="/@{{ userdata.username }}">View my public profile</a><br>
+            <h3>Information</h3>
+            <p>Account Type: {% if userdata.administrator == 1 %}Administrator{% else %}Regular{% endif %}<br>
             Username: {{ userdata.username }}<br>
             User ID: {{ userdata.id }}<br>
             Created on: {{ createddate }}</p>
-            <br>
-            <a href="/@{{ userdata.username }}">View my public profile</a><br>
+            <h3>Actions</h3>
             <a href="/settings/logout">Log out</a>
         </div>
     </div>

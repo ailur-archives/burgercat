@@ -13,8 +13,9 @@
     <div class="navbar">
         <h1>burgercat</h1>
         <a href="/">home</a>
+        <a href="/chat">chat</a>
         <a href="/post">post</a>
-        <a class="selected" href="/apidocs">API</a>
+        <a class="selected" href="/apidocs">api</a>
         {% if userdata %}
         <a href="/settings/logout" class="right r">log out</a>
         <a href="/settings" class="right">{{ userdata.username }}</a>
@@ -32,7 +33,7 @@
     <div class="postDiv">
     <div class="post">
     <h2>burgercat API documentation</h2>
-    for API things that require authentication, you will need to set the <code>session_DO_NOT_SHARE</code> cookie. the key might expire after 180 days.<br><br>
+    for API endpoints that require authentication, you'll need to set the <code>session_DO_NOT_SHARE</code> cookie. key might expire after 180 days.<br><br>
     
     GET <code>/api/frontpage</code> - returns frontpage<br><br>
     POST <code>/post</code> - post ctas - authentication required<br>
@@ -43,9 +44,9 @@
     POST <code>/api/delete</code> - remove posts - authentication required<br>
     <code>id</code>, being the id of the post. you must be the owner of the post to delete.<br><br>
     POST <code>/api/login</code> - get authentication key<br>
-    <code>username</code>, being the username and <code>password</code>, being the password. Returns authentication key.<br><br>
+    <code>username</code>, being the username and <code>password</code>, being the password.<br><br>
     GET <code>/api/userinfo</code> - authentication required - Returns user info, username, ID, and account creation date.<br><br>
-    GET <code>/api/post/1/comments</code> - Returns comments of post
+    GET <code>/api/post/1/comments</code> - Returns comments of post. Replace 1 with the post ID.
     </div>
     </div>
 </body>
