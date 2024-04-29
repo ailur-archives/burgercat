@@ -449,7 +449,7 @@ async def post():
             user = get_user(userCookie["id"])
             return await render_template("post.html", userdata=user)
     else:
-        flash("A burgercat account is required to post :3")
+        await flash("A burgercat account is required to post :3")
         return redirect(url_for("login"))
 
 
@@ -564,11 +564,11 @@ async def login():
         user = get_user(userID)
 
         if user == "error":
-            flash("Wrong username or password :3")
+            await flash("Wrong username or password :3")
             return redirect(url_for("login"))
 
         if not check_password_hash(user["password"], (requestData["password"])):
-            flash("Wrong username or password :3")
+            await flash("Wrong username or password :3")
             return redirect(url_for("login"))
 
         randomCharacters = secrets.token_hex(512)
