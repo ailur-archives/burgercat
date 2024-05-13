@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os
+import requests
 import configparser
 import sqlite3
 import time
@@ -385,6 +386,39 @@ async def apilogin():
         return {
             "error": "https://http.cat/images/400.jpg"
         }, 400
+
+@app.route("/api/oauth", methods=("GET", "POST"))
+async def apilogin():
+    if request.method == "POST":
+        data = await request.get_json()
+        username = data["username"]
+        password = data["access_token"]
+
+        response = requests.post("https://auth.hectabit.org/api/loggedin", {"access_token": password})
+        if response.status_code == 200:
+            userID = check_username_taken(username)
+            user = get_user(userID)
+            if user == "error":
+                conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
+                     (username, "OAUTH2", str(time.time()), ""))
+        else:
+            return {"error": "oauth2 token error"}, response.status_code
+
+        randomCharacters = secrets.token_hex(512)
+
+        conn = get_db_connection()
+        conn.execute("INSERT INTO sessions (session, id) VALUES (?, ?)",
+                     (randomCharacters, userID))
+        conn.commit()
+        conn.close()
+
+        return {
+                    "key": randomCharacters
+                }, 200
+    else:
+        return {
+            "error": "https://http.cat/images/405.jpg"
+        }, 405
 
 @app.route("/apidocs", methods=("GET", "POST"))
 async def apidocs():
