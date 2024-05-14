@@ -388,13 +388,15 @@ async def apilogin():
         }, 400
 
 @app.route("/api/oauth", methods=("GET", "POST"))
-async def apilogin():
+async def apioauth():
     if request.method == "POST":
         data = await request.get_json()
         username = data["username"]
         password = data["access_token"]
 
-        response = requests.post("https://auth.hectabit.org/api/loggedin", {"access_token": password})
+        conn = get_db_connection()
+        subdata = '{"access_token":"' + password + '"}'
+        response = requests.post("https://auth.hectabit.org/api/loggedin", subdata)
         if response.status_code == 200:
             userID = check_username_taken(username)
             user = get_user(userID)
@@ -402,11 +404,10 @@ async def apilogin():
                 conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
                      (username, "OAUTH2", str(time.time()), ""))
         else:
-            return {"error": "oauth2 token error"}, response.status_code
+            return {"error": response.json()["error"]}, response.status_code
 
         randomCharacters = secrets.token_hex(512)
 
-        conn = get_db_connection()
         conn.execute("INSERT INTO sessions (session, id) VALUES (?, ?)",
                      (randomCharacters, userID))
         conn.commit()
@@ -625,6 +626,9 @@ async def login():
     else:
         return await render_template("login.html")
 
+@app.route("/oauth", methods=("GET", "POST"))
+async def oauth():
+    return await render_template("oauth.html")
 
 @app.route("/settings", methods=("GET", "POST"))
 async def settings():

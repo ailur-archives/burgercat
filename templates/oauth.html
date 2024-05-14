@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth2 Test</title>
+</head>
+<body>
+    <h1 id="text">Login using OAuth2</h1>
+    <button onclick="authorize()">Authorize</button>
+    
+    <script>
+        // Configuration
+        const clientId = 'jT89GqLCqobN3pb6Rgkk0klDyicUbdjY';
+        const redirectUri = 'https://cat.hectabit.org/oauth';
+        const authorizationEndpoint = 'https://auth.hectabit.org/login';
+        const tokenEndpoint = 'https://auth.hectabit.org/api/tokenauth';
+        const userinfoEndpoint = 'https://auth.hectabit.org/userinfo'; // Added userinfo endpoint
+
+        // Generate a random code verifier
+        function generateCodeVerifier() {
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
+            const length = 128;
+            return Array.from(crypto.getRandomValues(new Uint8Array(length)))
+                .map((x) => charset[x % charset.length])
+                .join("");
+        }
+
+        // Create a code challenge from the code verifier using SHA-256
+        async function createCodeChallenge(codeVerifier) {
+            const buffer = new TextEncoder().encode(codeVerifier);
+            const hashArrayBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashBase64 = btoa(String.fromCharCode(...new Uint8Array(hashArrayBuffer)))
+                .replace(/=/g, '')
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_');
+            return hashBase64;
+        }
+
+        // Authorization function with PKCE
+        function authorize() {
+            const codeVerifier = generateCodeVerifier();
+            localStorage.setItem('codeVerifier', codeVerifier); // Store code verifier
+            createCodeChallenge(codeVerifier)
+                .then((codeChallenge) => {
+                    const authorizationUrl = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+                    window.location.href = authorizationUrl;
+                })
+                .catch((error) => {
+                    console.error('Error generating code challenge:', error);
+                });
+        }
+
+        // Parse the authorization code from the URL
+        function parseCodeFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('code');
+        }
+
+        // Exchange authorization code for access token
+        async function exchangeCodeForToken(code) {
+            const codeVerifier = localStorage.getItem('codeVerifier'); // Retrieve code verifier
+            const formData = new URLSearchParams();
+            formData.append('client_id', String(clientId));
+            formData.append('code', String(code));
+            formData.append('redirect_uri', String(redirectUri));
+            formData.append('grant_type', 'authorization_code');
+            formData.append('code_verifier', String(codeVerifier));
+
+            const response = await fetch(tokenEndpoint, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            const accessToken = data.access_token;
+            const idToken = data.id_token;
+
+            // Request userinfo with id_token in bearer format
+            fetch(userinfoEndpoint, {
+                headers: {
+                    "Authorization": `Bearer ${idToken}`
+                }
+            })
+            .then((response) => {
+                async function doStuff() {
+                    if (response.status == 200) {
+                        const userinfoData = await response.json();
+                        console.log("User:", userinfoData.name)
+                        console.log("Sub:", userinfoData.sub);
+                        document.getElementById("text").innerText = "Authenticating, " + userinfoData.name;
+                        fetch("https://cat.hectabit.org/api/oauth", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                username: userinfoData.name,
+                                access_token: data.access_token
+                            })
+                        })
+                        .then((response) => {
+                            async function doStuff2() {
+                                let key = await response.json()
+                                if (response.status == 200) {
+                                    document.cookie = "session_DO_NOT_SHARE" + "=" + (key["key"] || "") + "; expires=Session" + "; path=/" + "; samesite=Strict";
+                                    window.location.replace("/")
+                                } else {
+                                    document.getElementById("text").innerText = "Failed: " + key["error"]
+                                }
+                            }
+                            doStuff2()
+                        });
+                        localStorage.setItem("user", userinfoData.name)
+                        localStorage.setItem("sub", userinfoData.sub)
+                    } else {
+                        document.getElementById("text").innerText = "Authentication failed"
+                    }
+                }
+                doStuff()
+            });
+        }
+
+        // Main function to handle OAuth2 flow
+        async function main() {
+            if (localStorage.getItem("user") !== null) {
+                document.getElementById("text").innerText = "Welcome back, " + localStorage.getItem("user")
+            }
+            const code = parseCodeFromUrl();
+            if (code) {
+                await exchangeCodeForToken(code);
+            }
+        }
+
+        // Call the main function on page load
+        main();
+    </script>
+</body>
+</html>
