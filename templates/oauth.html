@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OAuth2 Test</title>
+    <title>Login to Burgercat</title>
 </head>
 <body>
-    <h1 id="text">Login using OAuth2</h1>
-    <button onclick="authorize()">Authorize</button>
+    <div class="accountform">
+        <br>
+        <a href="/">back</a><br><br>
+        <h1 id="text">Login to Burgercat</h1>
+        <button onclick="authorize()">Log in with Burgerauth Account</button>
+        <br><br>
+        <button onclick="window.location.href = '/login'">Use legacy login</button>
+    </div>
     
     <script>
         // Configuration
