@@ -240,9 +240,9 @@ async def user(pageusername):
         if usersession:
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
-            return await render_template("user.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+            return await render_template("user.html", userdata=user, createddate=datetime.datetime.fromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
         else:
-            return await render_template("user.html", createddate=datetime.datetime.utcfromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
+            return await render_template("user.html", createddate=datetime.datetime.fromtimestamp(int(str(pageuser["created"]).split(".")[0])).strftime("%Y-%m-%d"), pageuser=pageuser)
     else:
         return """<img src="https://http.cat/images/404.jpg">""", 404
 
@@ -553,39 +553,13 @@ async def cdn(filename):
     else:
         return "file doesn't exist!!"
 
-
 @app.route("/signup", methods=("GET", "POST"))
 async def signup():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
     if usersession:
         return redirect(url_for("main"))
-    if request.method == "POST":
-        requestData = await request.form
-
-        if not check_username_taken(requestData["username"]) == "error":
-            await flash("Username already taken :3")
-            return redirect(url_for("signup"))
-
-        if not requestData["username"].isalnum():
-            await flash("Username must be alphanumeric :3")
-            return redirect(url_for("signup"))
-
-        if not len(requestData["password"]) > int(PASSWORD_REQUIREMENT):
-            await flash("Password must contain at least " + PASSWORD_REQUIREMENT + " characters")
-            return redirect(url_for("signup"))
-
-        hashedpassword = generate_password_hash(requestData["password"])
-
-        conn = get_db_connection()
-        conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
-                     (requestData["username"], hashedpassword, str(time.time()), ""))
-        conn.commit()
-        conn.close()
-
-        return redirect(url_for("login"))
     else:
-        return await render_template("signup.html")
-
+        return redirect(url_for("oauth"))
 
 @app.route("/login", methods=("GET", "POST"))
 async def login():
@@ -637,7 +611,7 @@ async def settings():
         userCookie = get_session(usersession)
         user = get_user(userCookie["id"])
 
-        return await render_template("settings.html", userdata=user, createddate=datetime.datetime.utcfromtimestamp(int(str(user["created"]).split(".")[0])).strftime("%Y-%m-%d %H:%m:%S"))
+        return await render_template("settings.html", userdata=user, createddate=datetime.datetime.fromtimestamp(int(str(user["created"]).split(".")[0])).strftime("%Y-%m-%d %H:%m:%S"))
     else:
         return redirect("/")
 
