@@ -109,6 +109,14 @@ def check_username_taken(username):
         return "error"
     return post["id"]
 
+def check_sub_taken(sub):
+    conn = get_db_connection()
+    post = conn.execute("SELECT * FROM users WHERE password = ?",
+                       	(str("OAUTH-" + sub),)).fetchone()
+    conn.close()
+    if post is None:
+        return "error"
+    return post["id"]
 
 def get_session(id):
     conn = get_db_connection()
@@ -387,22 +395,54 @@ async def apilogin():
             "error": "https://http.cat/images/400.jpg"
         }, 400
 
+@app.route("/api/migrate", methods=("GET", "POST"))
+async def migrate():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if request.method == "POST":
+        data = await request.get_json()
+        sub = data["sub"]
+        password = data["access_token"]
+        userCookie = get_session(usersession)
+        user = get_user(userCookie["id"])
+        if user == "error":
+            return { "error": "User doesn't exist" }, 403
+
+        conn = get_db_connection()
+        subdata = '{"access_token":"' + password + '"}'
+        response = requests.post("https://auth.hectabit.org/api/uniqueid", subdata)
+        if response.status_code == 200:
+            data = response.json()
+            conn.execute("UPDATE users SET password = ? WHERE id = ?",
+                (str("OAUTH-" + data['uniqueid']), user["id"]))
+        else:
+            return {"error": response.json()["error"]}, response.status_code
+        conn.commit()
+        conn.close()
+        return {"success": "true"}, 200
+
 @app.route("/api/oauth", methods=("GET", "POST"))
 async def apioauth():
     if request.method == "POST":
         data = await request.get_json()
         username = data["username"]
+        sub = data["sub"]
         password = data["access_token"]
 
         conn = get_db_connection()
         subdata = '{"access_token":"' + password + '"}'
         response = requests.post("https://auth.hectabit.org/api/loggedin", subdata)
         if response.status_code == 200:
-            userID = check_username_taken(username)
+            userID = check_sub_taken(sub)
             user = get_user(userID)
             if user == "error":
-                conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
-                     (username, "OAUTH2", str(time.time()), ""))
+                userID = check_username_taken(username)
+                user = get_user(userID)
+                if user == "error":
+                    conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
+                         (username, str("OAUTH-" + sub), str(time.time()), ""))
+                else:
+                    if user["password"] != "OAUTH-" + sub:
+                        return {"error": "Migration required or username taken"}, 422
         else:
             return {"error": response.json()["error"]}, response.status_code
 
@@ -497,7 +537,7 @@ async def comment():
             data = await request.get_json()
             uid = data["id"]
             title = data["title"]
-            
+
             userCookie = get_session(usersession)
             user = get_user(userCookie["id"])
 
@@ -553,6 +593,38 @@ async def cdn(filename):
     else:
         return "file doesn't exist!!"
 
+@app.route("/legacysignup", methods=("GET", "POST"))
+async def legacysignup():
+    usersession = request.cookies.get("session_DO_NOT_SHARE")
+    if usersession:
+        return redirect(url_for("main"))
+    if request.method == "POST":
+        requestData = await request.form
+
+        if not check_username_taken(requestData["username"]) == "error":
+            await flash("Username already taken :3")
+            return redirect(url_for("signup"))
+
+        if not requestData["username"].isalnum():
+            await flash("Username must be alphanumeric :3")
+            return redirect(url_for("signup"))
+
+        if not len(requestData["password"]) > int(PASSWORD_REQUIREMENT):
+            await flash("Password must contain at least " + PASSWORD_REQUIREMENT + " characters")
+            return redirect(url_for("signup"))
+
+        hashedpassword = generate_password_hash(requestData["password"])
+
+        conn = get_db_connection()
+        conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
+                     (requestData["username"], hashedpassword, str(time.time()), ""))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("login"))
+    else:
+        return await render_template("signup.html")
+
 @app.route("/signup", methods=("GET", "POST"))
 async def signup():
     usersession = request.cookies.get("session_DO_NOT_SHARE")
@@ -602,7 +674,11 @@ async def login():
 
 @app.route("/oauth", methods=("GET", "POST"))
 async def oauth():
-    return await render_template("oauth.html")
+    legacymigrate = request.cookies.get("legacy_migrate")
+    if legacymigrate != "1":
+        return await render_template("oauth.html")
+    else:
+        return await render_template("migrate.html")
 
 @app.route("/settings", methods=("GET", "POST"))
 async def settings():
@@ -673,7 +749,7 @@ async def logout():
     resp = redirect(url_for("main"))
     session = request.cookies.get("session_DO_NOT_SHARE")
     resp.delete_cookie("session_DO_NOT_SHARE")
-
+    resp.delete_cookie("prefuser")
     return resp
 
 @app.errorhandler(500)

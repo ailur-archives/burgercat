@@ -10,12 +10,8 @@
     <div class="accountform">
         <br>
         <a href="/">back</a><br><br>
-        <h1 id="text">Login to Burgercat</h1>
-        <button onclick="authorize()">Log in with Burgerauth Account</button>
-        <br><br>
-        <button onclick="cuser_authorize()">Log in with Burgerauth Account (custom username)</button>
-        <br><br>
-        <button onclick="window.location.href = '/login'">Use legacy login</button>
+        <h1 id="text">Migrate to Burgerauth</h1>
+        <button onclick="authorize()">Link a Burgerauth Account</button>
     </div>
     
     <script>
@@ -55,12 +51,6 @@
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_');
             return hashBase64;
-        }
-
-
-        function cuser_authorize() {
-            document.cookie = "prefuser" + "=" + window.prompt("Choose your custom username (cannot be longer than 20 characters)") + "; expires=Session" + "; path=/" + "; samesite=Strict";
-            authorize()
         }
 
         // Authorization function with PKCE
@@ -117,37 +107,27 @@
                         const userinfoData = await response.json();
                         console.log("User:", userinfoData.name)
                         console.log("Sub:", userinfoData.sub);
-                        let preferreduser = userinfoData.name
-                        if (getCookie("prefuser") != "") {
-                            preferreduser = getCookie("prefuser")
-                        }
                         document.getElementById("text").innerText = "Authenticating, " + userinfoData.name;
-                        fetch("https://cat.hectabit.org/api/oauth", {
+                        fetch("https://cat.hectabit.org/api/migrate", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json"
                             },
                             body: JSON.stringify({
-                                username: preferreduser,
-                                access_token: data.access_token,
-                                sub: userinfoData.sub
+                                sub: userinfoData.sub,
+                                access_token: data.access_token
                             })
                         })
                         .then((response) => {
                             async function doStuff2() {
-                                let key = await response.json()
                                 if (response.status == 200) {
-                                    document.cookie = "session_DO_NOT_SHARE" + "=" + (key["key"] || "") + "; expires=Session" + "; path=/" + "; samesite=Strict";
                                     window.location.replace("/")
-                                } else if (response.status == 422) {
-                                    document.getElementById("text").innerText = "Username taken. Migrate or choose a new custom username!"
                                 } else {
                                     document.getElementById("text").innerText = "Failed: " + key["error"]
                                 }
                             }
                             doStuff2()
                         });
-                        localStorage.setItem("user", preferreduser)
                     } else {
                         document.getElementById("text").innerText = "Authentication failed"
                     }
@@ -158,9 +138,6 @@
 
         // Main function to handle OAuth2 flow
         async function main() {
-            if (localStorage.getItem("user") !== null) {
-                document.getElementById("text").innerText = "Welcome back, " + localStorage.getItem("user")
-            }
             const code = parseCodeFromUrl();
             if (code) {
                 await exchangeCodeForToken(code);
