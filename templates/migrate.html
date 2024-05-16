@@ -121,7 +121,7 @@
                         .then((response) => {
                             async function doStuff2() {
                                 if (response.status == 200) {
-document.cookie = 'legacy_migrate=; Max-Age=0; path=/;"
+                                    document.cookie = "legacy_migrate=; Max-Age=0; path=/;"
                                     window.location.replace("/")
                                 } else {
                                     document.getElementById("text").innerText = "Failed: " + key["error"]

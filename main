@@ -663,8 +663,8 @@ async def login():
         conn.close()
 
         response = Response("""<script>window.location.href = "/oauth";</script>""")
-        response.set_cookie("session_DO_NOT_SHARE", randomCharacters)
-        response.set_cookie("legacy_migrate", "1")
+        response.set_cookie("session_DO_NOT_SHARE", randomCharacters, samesite="Strict", secure=True)
+        response.set_cookie("legacy_migrate", "1", samesite="Strict", secure=True)
         return response
 
         #resp = await make_response(redirect("/"))

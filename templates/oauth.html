@@ -59,7 +59,7 @@
 
 
         function cuser_authorize() {
-            document.cookie = "prefuser" + "=" + window.prompt("Choose your custom username (cannot be longer than 20 characters)") + "; expires=Session" + "; path=/" + "; samesite=Strict";
+            document.cookie = "prefuser" + "=" + window.prompt("Choose your custom username (cannot be longer than 20 characters)") + "; expires=Session" + "; path=/" + "; samesite=Strict; secure=true;";
             authorize()
         }
 
@@ -137,7 +137,7 @@
                             async function doStuff2() {
                                 let key = await response.json()
                                 if (response.status == 200) {
-                                    document.cookie = "session_DO_NOT_SHARE" + "=" + (key["key"] || "") + "; expires=Session" + "; path=/" + "; samesite=Strict";
+                                    document.cookie = "session_DO_NOT_SHARE" + "=" + (key["key"] || "") + "; expires=Session" + "; path=/" + "; samesite=Strict; secure=true;"
                                     window.location.replace("/")
                                 } else if (response.status == 422) {
                                     document.getElementById("text").innerText = "Username taken. Migrate or choose a new custom username!"
