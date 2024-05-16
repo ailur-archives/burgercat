@@ -438,8 +438,10 @@ async def apioauth():
                 userID = check_username_taken(username)
                 user = get_user(userID)
                 if user == "error":
-                    conn.execute("INSERT INTO users (username, password, created, htmldescription) VALUES (?, ?, ?, ?)",
-                         (username, str("OAUTH-" + sub), str(time.time()), ""))
+                    conn.execute("INSERT INTO users (username, password, created, htmldescription, banned) VALUES (?, ?, ?, ?, ?)",
+                         (username, str("OAUTH-" + sub), str(time.time()), "", "0"))
+                    userID = conn.execute("SELECT * FROM users WHERE lower(username) = ?",
+                         (username.lower(),)).fetchone()["id"]
                 else:
                     if user["password"] != "OAUTH-" + sub:
                         return {"error": "Migration required or username taken"}, 422
@@ -660,8 +662,9 @@ async def login():
         conn.commit()
         conn.close()
 
-        response = Response("""<script>window.location.href = "/";</script>""")
+        response = Response("""<script>window.location.href = "/oauth";</script>""")
         response.set_cookie("session_DO_NOT_SHARE", randomCharacters)
+        response.set_cookie("legacy_migrate", "1")
         return response
 
         #resp = await make_response(redirect("/"))
@@ -750,6 +753,7 @@ async def logout():
     session = request.cookies.get("session_DO_NOT_SHARE")
     resp.delete_cookie("session_DO_NOT_SHARE")
     resp.delete_cookie("prefuser")
+    resp.delete_cookie("legacy_migrate")
     return resp
 
 @app.errorhandler(500)

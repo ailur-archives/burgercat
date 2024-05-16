@@ -118,7 +118,7 @@
                         console.log("User:", userinfoData.name)
                         console.log("Sub:", userinfoData.sub);
                         let preferreduser = userinfoData.name
-                        if (getCookie("prefuser") != "") {
+                        if (getCookie("prefuser") != null) {
                             preferreduser = getCookie("prefuser")
                         }
                         document.getElementById("text").innerText = "Authenticating, " + userinfoData.name;
