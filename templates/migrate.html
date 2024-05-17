@@ -108,7 +108,7 @@
                         console.log("User:", userinfoData.name)
                         console.log("Sub:", userinfoData.sub);
                         document.getElementById("text").innerText = "Authenticating, " + userinfoData.name;
-                        fetch("https://cat.hectabit.org/api/migrate", {
+                        fetch("/api/migrate", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json"

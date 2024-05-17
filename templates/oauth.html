@@ -122,7 +122,7 @@
                             preferreduser = getCookie("prefuser")
                         }
                         document.getElementById("text").innerText = "Authenticating, " + userinfoData.name;
-                        fetch("https://cat.hectabit.org/api/oauth", {
+                        fetch("/api/oauth", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json"
