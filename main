@@ -664,7 +664,7 @@ async def login():
 
         response = Response("""<script>window.location.href = "/oauth";</script>""")
         response.set_cookie("session_DO_NOT_SHARE", randomCharacters, samesite="Strict", secure=True)
-        response.set_cookie("legacy_migrate", "1", samesite="Strict", secure=True)
+        session["legacy_migrate"] = True
         return response
 
         #resp = await make_response(redirect("/"))
@@ -677,8 +677,12 @@ async def login():
 
 @app.route("/oauth", methods=("GET", "POST"))
 async def oauth():
-    legacymigrate = request.cookies.get("legacy_migrate")
-    if legacymigrate != "1":
+    try:
+        legacymigrate = session["legacy_migrate"]
+    except:
+        session["legacy_migrate"] = False
+        legacymigrate = False
+    if not legacymigrate:
         return await render_template("oauth.html")
     else:
         return await render_template("migrate.html")
@@ -753,7 +757,7 @@ async def logout():
     session = request.cookies.get("session_DO_NOT_SHARE")
     resp.delete_cookie("session_DO_NOT_SHARE")
     resp.delete_cookie("prefuser")
-    resp.delete_cookie("legacy_migrate")
+    resp.delete_cookie("session")
     return resp
 
 @app.errorhandler(500)
